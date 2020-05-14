@@ -33,7 +33,25 @@ func run2() (err error) {
 	_ = a
 	fmt.Println(len(a.Data))
 	fmt.Println(a.Format)
-	fmt.Println(a.Data)
+
+	// algo for finding points
+	// a = ao + 2*rand(size(a))*10000;
+	// a = a/10000;
+	// s = [];
+	// for i=1:window:length(a)-window
+	// 	s = [s; std(a(i:i+window))];
+	// end
+	// s = [0; s];
+	// sdiffs = diff(abs(s));
+	// plot(s)
+	// hold on;
+	// plot(sdiffs,'-o')
+	// stddiffs = std(sdiffs)
+
+	// hold on;
+	// ind = find(sdiffs > stddiffs)
+	// plot(ind,ones(size(ind)),'o')
+
 	return
 }
 
@@ -59,7 +77,9 @@ func run() (err error) {
 		return
 	}
 	fmt.Printf("\n op1data: %+v\n", op1data)
+	fmt.Println(len(op1data.End))
 
+	// modify one end point of the first one
 	op1data.End[0] = op1data.End[0] / 2
 
 	bop1, err := json.Marshal(op1data)
@@ -69,7 +89,7 @@ func run() (err error) {
 	b2 := append([]byte{}, b[:start+4]...)
 	b2 = append(b2, bop1...)
 	b2 = append(b2, b[start+end+1:]...)
-	err = ioutil.WriteFile("2.tif", b2, 0644)
+	err = ioutil.WriteFile("2.aif", b2, 0644)
 
 	return
 }
