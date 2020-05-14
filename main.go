@@ -19,7 +19,7 @@ import (
 
 func main() {
 
-	_, err := getsilences()
+	_, err := run()
 	if err != nil {
 		panic(err)
 	}
