@@ -2,17 +2,24 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/go-audio/aiff"
 )
 
 func main() {
-	err := run2()
+
+	_, err := getsilences()
 	if err != nil {
 		panic(err)
 	}
@@ -52,6 +59,131 @@ func run2() (err error) {
 	// ind = find(sdiffs > stddiffs)
 	// plot(ind,ones(size(ind)),'o')
 
+	return
+}
+
+type AudioSegment struct {
+	Start    float64
+	End      float64
+	Filename string
+	Duration float64
+}
+
+func getsilences() (positions []string, err error) {
+	s := strings.Fields(`ffmpeg -i 1.aif -af silencedetect=noise=-30dB:d=0.1 -f null -`)
+
+	out, err := exec.Command(s[0], s[1:]...).CombinedOutput()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(out))
+
+	var segments []AudioSegment
+	var segment AudioSegment
+	segment.Start = 0
+	for _, line := range strings.Split(string(out), "\n") {
+		if strings.Contains(line, "silence_end") {
+			seconds, err := ConvertToSeconds(GetStringInBetween(line, "silence_end: ", " "))
+			if err == nil {
+				segment.End = seconds
+				segment.Duration = segment.End - segment.Start
+				segments = append(segments, segment)
+				segment.Start = segment.End
+			}
+		} else if strings.Contains(line, "time=") {
+			seconds, err := ConvertToSeconds(GetStringInBetween(line, "time=", " "))
+			if err == nil {
+				segment.End = seconds
+				segment.Duration = segment.End - segment.Start
+				segments = append(segments, segment)
+				segment.Start = segment.End
+			}
+		}
+	}
+	fmt.Println(segments)
+
+	fnamePrefix := TempFileName("split", "-")
+	for i := range segments {
+		segments[i].Filename = fmt.Sprintf("%s%d.wav", fnamePrefix, i)
+		_, err = exec.Command("ffmpeg", strings.Fields(fmt.Sprintf("-i 1.aif -acodec copy -ss %2.8f -to %2.8f %s", segments[i].Start, segments[i].End, segments[i].Filename))...).CombinedOutput()
+		if err != nil {
+			return
+		}
+	}
+	fmt.Println(segments)
+
+	fnamesToMerge := []string{}
+	currentLength := 0.0
+	mergeNum := 0
+	fnamePrefix = TempFileName("merge", "-")
+	mergedFiles := []string{}
+	for _, segment := range segments {
+		if segment.Duration+currentLength > 11.5 {
+			err = MergeAudioFiles(fnamesToMerge, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
+			if err != nil {
+				return
+			}
+			mergedFiles = append(mergedFiles, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
+			currentLength = 0
+			fnamesToMerge = []string{}
+			mergeNum++
+		}
+		fnamesToMerge = append(fnamesToMerge, segment.Filename)
+		currentLength += segment.Duration
+	}
+	err = MergeAudioFiles(fnamesToMerge, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
+	if err != nil {
+		return
+	}
+	mergedFiles = append(mergedFiles, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
+
+	fmt.Println(mergedFiles)
+	return
+}
+
+func MergeAudioFiles(fnames []string, outfname string) (err error) {
+	mergelist := TempFileName("mergelist", ".txt")
+	defer os.Remove(mergelist)
+
+	f, err := os.Create(mergelist)
+	if err != nil {
+		return
+	}
+	for _, fname := range fnames {
+		f.WriteString(fmt.Sprintf("file '%s'\n", fname))
+	}
+	f.Close()
+
+	_, err = exec.Command("ffmpeg", strings.Fields(fmt.Sprintf("-f concat -safe 0 -i %s -c copy %s", mergelist, outfname))...).CombinedOutput()
+	return
+}
+
+func Duration(fname string) (seconds float64, err error) {
+	out, err := exec.Command("ffprobe", strings.Fields(fmt.Sprintf("-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 %s", fname))...).CombinedOutput()
+	if err != nil {
+		return
+	}
+	seconds, err = strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+	return
+}
+
+// ConvertToSeconds converts a string lik 00:00:11.35 into seconds (11.35)
+func ConvertToSeconds(s string) (seconds float64, err error) {
+	parts := strings.Split(s, ":")
+	multipliers := []float64{60 * 60, 60, 1}
+	if len(parts) == 2 {
+		multipliers = []float64{60, 1, 1}
+	} else if len(parts) == 1 {
+		multipliers = []float64{1, 1, 1}
+	}
+	for i, part := range parts {
+		var partf float64
+		partf, err = strconv.ParseFloat(part, 64)
+		if err != nil {
+			return
+		}
+		seconds += partf * multipliers[i]
+	}
 	return
 }
 
@@ -113,4 +245,26 @@ type OP1MetaData struct {
 	Start       []int  `json:"start"`
 	Type        string `json:"type"`
 	Volume      []int  `json:"volume"`
+}
+
+// GetStringInBetween returns empty string if no start or end string found
+func GetStringInBetween(str string, start string, end string) (result string) {
+	s := strings.Index(str, start)
+	if s == -1 {
+		return
+	}
+	s += len(start)
+	e := strings.Index(str[s:], end)
+	if e == -1 {
+		return
+	}
+	return str[s : s+e]
+}
+
+// TempFileName generates a temporary filename for use in testing or whatever
+func TempFileName(prefix, suffix string) string {
+	randBytes := make([]byte, 16)
+	rand.Read(randBytes)
+
+	return filepath.Join(".", prefix+hex.EncodeToString(randBytes)+suffix)
 }
