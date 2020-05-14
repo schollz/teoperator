@@ -19,7 +19,7 @@ import (
 
 func main() {
 
-	_, err := run()
+	err := run()
 	if err != nil {
 		panic(err)
 	}
@@ -192,19 +192,27 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
-	start := bytes.Index(b, []byte("op-1"))
+	start := bytes.Index(b, []byte("APPL"))
 	if start < 0 {
 		return
 	}
-	end := bytes.Index(b[start:], []byte("}"))
+	end := bytes.Index(b[start:], []byte("SSND"))
 	if end < 0 {
 		return
 	}
 
-	fmt.Println(string(b[start+4 : start+end+1]))
+	fmt.Println(b[start : start+end+4])
+	fmt.Println(string(b[start+12 : start+end-2]))
+
+	startBytes := []byte{65, 80, 80, 76, 0, 0, 4, 198, 111, 112, 45, 49}
+	endBytes := []byte{10, 32}
+	fmt.Println(bytes.Equal(startBytes, b[start:start+12]))
+	fmt.Println(bytes.Equal(endBytes, b[start+end-2:start+end]))
+	fmt.Printf("starter %+v", b[start:start+12])
+	fmt.Printf("end %+v", b[start+end-2:start+end])
 
 	var op1data OP1MetaData
-	err = json.Unmarshal(b[start+4:start+end+1], &op1data)
+	err = json.Unmarshal(b[start+12:start+end-2], &op1data)
 	if err != nil {
 		return
 	}
@@ -245,6 +253,13 @@ type OP1MetaData struct {
 	Start       []int  `json:"start"`
 	Type        string `json:"type"`
 	Volume      []int  `json:"volume"`
+}
+
+func DefaultOP1() OP1MetaData {
+	b := []byte(`{"drum_version":2,"dyna_env":[0,8192,0,8192,0,0,0,0],"end":[97643143,165163892,211907777,282025634,313446583,372916297,413167412,454132733,478541489,492549640,582028126,642634075,642634075,642634075,642634075,642634075,642634075,642634075,642634075,642634075,642634075,642634075,642634075,2032606256],"fx_active":false,"fx_params":[8000,8000,8000,8000,8000,8000,8000,8000],"fx_type":"delay","lfo_active":false,"lfo_params":[16000,16000,16000,16000,0,0,0,0],"lfo_type":"tremolo","name":"boombap1","octave":0,"pitch":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"playmode":[8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192],"reverse":[8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192],"start":[0,97647201,165167950,211911835,282029692,313450641,372920355,413171470,454136790,478545547,492553698,582032184,582032184,582032184,582032184,582032184,582032184,582032184,582032184,582032184,582032184,582032184,582032184,642638133],"type":"drum","volume":[8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192,8192]}`)
+	var op1data OP1MetaData
+	json.Unmarshal(b, &op1data)
+	return op1data
 }
 
 // GetStringInBetween returns empty string if no start or end string found
