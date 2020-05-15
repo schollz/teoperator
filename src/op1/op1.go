@@ -56,7 +56,7 @@ func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error)
 		return
 	}
 	// generate a merged audio waveform
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 %s", fnameIn, fnameOut)
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100 %s", fnameIn, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {

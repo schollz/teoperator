@@ -214,8 +214,9 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 	return
 }
 
-func Truncate(fname string) (err error) {
-	cmd := fmt.Sprintf("-y -i %s -c copy -ss 0 -to 00:01:00 0%s", fname, fname)
+// Truncate will truncate a file, while converting it to 44100
+func Truncate(fnameIn, fnameOut, from, to string) (err error) {
+	cmd := fmt.Sprintf("-y -i %s -c copy -ss %s -to %s -ar 44100 %s", fnameIn, from, to, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)

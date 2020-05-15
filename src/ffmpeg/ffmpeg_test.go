@@ -9,7 +9,10 @@ import (
 )
 
 func TestSplitAndMerge(t *testing.T) {
-	segments, err := SplitOnSilence("tests/1.aif", -18, 0.05)
+	err := Truncate("tests/1.aif", "1.wav", "0", "00:01:00")
+	assert.Nil(t, err)
+
+	segments, err := SplitOnSilence("1.wav", -18, 0.05)
 	assert.Nil(t, err)
 	for _, segment := range segments {
 		fmt.Printf("segment: %+v\n", segment)
