@@ -2,5 +2,20 @@
 (( with .MessageError ))
 ((.))
 (( end ))
+<div class="pt1">
+    <img src="/data/(($.Metadata.UUID))/split-merge.png" width=100%> 
+    </div>
+    
+(( range .Metadata.Segments))
+ 
+ <div class="pt1">
+<img src="/data/(($.Metadata.UUID))/splitmerge((.))-merge.png"> 
+</div>
+<audio controls>
+    <source src="/data/(($.Metadata.UUID))/done-((.)).aif" type="audio/aiff">
+ <source src="/data/(($.Metadata.UUID))/merge-((.)).wav" type="audio/wav">
+            Your browser does not support the audio tag.
+  </audio>
+ ((end))
 
 ((template "footer" .))

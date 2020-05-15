@@ -232,7 +232,7 @@
                 </legend>
                 <form action="/patch" method="get">
                 <div>
-                    <input id="audioURL" name="audioURL" type="text" />
+                    <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))"/>
                     <label for="audioURL">url:</label>
                 </div>
                 <div>

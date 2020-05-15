@@ -49,15 +49,17 @@ type Href struct {
 }
 
 type Metadata struct {
-	NumberSegments int
-	OriginalURL    string
-	StartStop      []float64
+	UUID        string
+	Segments    []int
+	OriginalURL string
+	StartStop   []float64
 }
 
 type Render struct {
+	Title        string
 	MessageError string
 	MessageInfo  string
-	Metadata Metadata
+	Metadata     Metadata
 }
 
 var t map[string]*template.Template
@@ -156,18 +158,18 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
-	metadatab, err := ioutil.ReadFile(path.Join("data",uuid,"metadata.json"))
+	metadatab, err := ioutil.ReadFile(path.Join("data", uuid, "metadata.json"))
 	if err != nil {
 		return
 	}
 	var metadata Metadata
-	err = json.Unmarshal(metadatab,&metadata))
+	err = json.Unmarshal(metadatab, &metadata)
 	if err != nil {
 		return
 	}
 
 	t["main"].Execute(w, Render{
-Metadata: metadata,
+		Metadata: metadata,
 	})
 	return
 }
@@ -180,8 +182,6 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	})
 	return
 }
-
-
 
 func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	log.Debug(u, startStop)
@@ -220,10 +220,14 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	}
 
 	// write metadata
+	segnums := []int{}
+	for i := 0; i < numSegments; i++ {
+		segnums = append(segnums, i)
+	}
 	b, _ := json.Marshal(Metadata{
-		NumberSegments: numSegments,
-		OriginalURL:    u,
-		StartStop:      startStop,
+		Segments:    segnums,
+		OriginalURL: u,
+		StartStop:   startStop,
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
