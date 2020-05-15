@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/schollz/httpfileserver"
 	log "github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/build"
 	"github.com/schollz/teoperator/src/download"
 )
 
@@ -132,27 +135,29 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
-	// audioURL, _ := r.URL.Query()["audioURL"]
-	// secondsStart, _ := r.URL.Query()["secondsStart"]
-	// secondsEnd, _ := r.URL.Query()["secondsEnd"]
+	audioURL, _ := r.URL.Query()["audioURL"]
+	secondsStart, _ := r.URL.Query()["secondsStart"]
+	secondsEnd, _ := r.URL.Query()["secondsEnd"]
 
-	// if len(audioURL[0]) == 0 {
-	// 	err = fmt.Errorf("no URL")
-	// 	return
-	// }
+	if len(audioURL[0]) == 0 {
+		err = fmt.Errorf("no URL")
+		return
+	}
 
-	// startStop := []float64{0, 0}
-	// if secondsStart[0] != "" {
-	// 	startStop[0], _ = strconv.ParseFloat(secondsStart[0], 64)
-	// }
-	// if secondsEnd[0] != "" {
-	// 	startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
-	// }
+	startStop := []float64{0, 0}
+	if secondsStart[0] != "" {
+		startStop[0], _ = strconv.ParseFloat(secondsStart[0], 64)
+	}
+	if secondsEnd[0] != "" {
+		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
+	}
 
-	// err = generateUserData(audio, startStop []float64)
+	err = generateUserData(audioURL[0], startStop)
+	if err != nil {
+		return
+	}
 
-	// t["main"].Execute(w, Render{})
-	// err = nil
+	t["main"].Execute(w, Render{})
 	return
 }
 
@@ -165,6 +170,12 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
+type Metadata struct {
+	NumberSegments int
+	OriginalURL    string
+	StartStop      []float64
+}
+
 func generateUserData(u string, startStop []float64) (err error) {
 	log.Debug(u, startStop)
 
@@ -172,6 +183,16 @@ func generateUserData(u string, startStop []float64) (err error) {
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
+
+	_, errstat := os.Stat(pathToData)
+	if errstat == nil {
+		return
+	}
+
+	// TODO: check if already exists
+	// for now, just dleete
+	os.RemoveAll(pathToData)
+
 	err = os.Mkdir(pathToData, os.ModePerm)
 	if err != nil {
 		return
@@ -189,6 +210,18 @@ func generateUserData(u string, startStop []float64) (err error) {
 		return
 	}
 
-	log.Debug(uuid)
+	numSegments, err := build.DrumpatchFromAudio(fname)
+	if err != nil {
+		return
+	}
+
+	// write metadata
+	b, _ := json.Marshal(Metadata{
+		NumberSegments: numSegments,
+		OriginalURL:    u,
+		StartStop:      startStop,
+	})
+	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
+
 	return
 }

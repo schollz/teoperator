@@ -22,11 +22,13 @@ type AudioSegment struct {
 	Duration float64
 }
 
-const SECONDSATEND = 0.05
+const SECONDSATEND = 0.1
 
 // SplitOnSilence splits any audio file based on its silence
 func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) (segments []AudioSegment, err error) {
-	out, err := exec.Command("ffmpeg", strings.Fields(fmt.Sprintf("-i %s -af silencedetect=noise=%ddB:d=%2.3f -f null -", fname, silenceDB, silenceMinimumSeconds))...).CombinedOutput()
+	cmd := fmt.Sprintf("-i %s -af silencedetect=noise=%ddB:d=%2.3f -f null -", fname, silenceDB, silenceMinimumSeconds)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		return
 	}
@@ -78,7 +80,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 		}
 	}
 	if i == 0 {
-		err = fmt.Errorf("could not find any segmenets")
+		err = fmt.Errorf("could not find any segments")
 		return
 	}
 	newSegments = newSegments[:i]
@@ -105,7 +107,7 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 		}
 		if addsilence {
 			// -af 'apad=pad_dur=0.1' adds SECONDSATEND milliseconds of silence to the end
-			cmd = fmt.Sprintf("-y -i %s.0.wav -af apad=pad_dur=%2.3f %s", splitSegments[i].Filename, SECONDSATEND, splitSegments[i].Filename)
+			cmd = fmt.Sprintf("-y -i %s.0.wav -af apad=pad_dur=%2.3f %s", splitSegments[i].Filename, 0.011, splitSegments[i].Filename)
 			logger.Debug(cmd)
 			out, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 			if err != nil {
@@ -217,9 +219,20 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 
 // Truncate will truncate a file, while converting it to 44100
 func Truncate(fnameIn, fnameOut, from, to string) (err error) {
-	cmd := fmt.Sprintf("-y -i %s -c copy -ss %s -to %s -ar 44100 %s", fnameIn, from, to, fnameOut)
+	defer os.Remove("temp.wav")
+
+	cmd := fmt.Sprintf("-y -i %s temp.wav", fnameIn)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	logger.Debugf("ffmpeg: %s", out)
+	if err != nil {
+		err = fmt.Errorf("ffmpeg; %s", err.Error())
+		return
+	}
+
+	cmd = fmt.Sprintf("-y -i temp.wav -c copy -ss %s -to %s -ar 44100 %s", from, to, fnameOut)
+	logger.Debug(cmd)
+	out, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
 	if err != nil {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())
