@@ -6,7 +6,20 @@ experiments:
 ## Install
 
 ```
-$ sudo apt install imagemagick ffmpeg
+$ sudo apt install imagemagick ffmpeg 
+$ sudo add-apt-repository ppa:chris-needham/ppa
+$ sudo apt-get update
+$ sudo apt-get install audiowaveform
+```
+
+#### Windows
+
+```
+go get github.com/schollz/zget
+zget https://github.com/wincentbalin/compile-static-audiowaveform/releases/download/1.2.2/audiowaveform-mingw64.zip
+unzip audiowaveform-mingw64.zip 
+mv audiowaveform to path
+scoop install ffmpeg imagemagick
 ```
 
 ```
