@@ -1,4 +1,4 @@
-package ffmpeg
+package audiosegment
 
 import (
 	"fmt"
@@ -7,10 +7,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/schollz/logger"
 	"github.com/schollz/op1-aiff/src/utils"
+	"github.com/schollz/op1-aiff/src/waveform"
 )
 
 type AudioSegment struct {
@@ -114,18 +116,19 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 		allfnames[i] = fmt.Sprintf("%s.png", splitSegments[i].Filename)
 		var out []byte
 		color := colors[int(math.Mod(float64(i), 2))]
-		cmd := fmt.Sprintf("-i %s -o %s.png --background-color ffffff00 --waveform-color %s --amplitude-scale 1 --no-axis-labels --pixels-per-second 100 --height 80 --width %2.0f", splitSegments[i].Filename, splitSegments[i].Filename, color, splitSegments[i].Duration*100)
-		logger.Debug(cmd)
-		out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
+		err = waveform.Image(splitSegments[i].Filename, color, splitSegments[i].Duration)
 		if err != nil {
-			logger.Errorf("audiowaveform: %s", out)
 			return
 		}
 	}
 	// generate a merged audio waveform image
 	cmd := fmt.Sprintf("%s +append %s-merge.png", strings.Join(allfnames, " "), fnamePrefix)
 	logger.Debug(cmd)
-	out, err := exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	cmd0 := "convert"
+	if runtime.GOOS == "windows" {
+		cmd0 = "imconvert"
+	}
+	out, err := exec.Command(cmd0), strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 		return
@@ -202,15 +205,7 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 	segment.Filename = outfname
 
 	// create audio waveform
-	cmd = fmt.Sprintf("-i %s -o %s.png --background-color ffffff00 --waveform-color ffffff --amplitude-scale 1 --no-axis-labels --pixels-per-second 100 --height 80 --width %2.0f",
-		segment.Filename, segment.Filename, segment.Duration*100,
-	)
-	logger.Debug(cmd)
-	out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
-	if err != nil {
-		logger.Errorf("audiowaveform: %s", out)
-		return
-	}
+	err = waveform.Image(segment.Filename, "ffffff", segment.Duration)
 	return
 }
 
