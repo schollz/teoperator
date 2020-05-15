@@ -48,17 +48,16 @@ type Href struct {
 	Flag  bool
 }
 
+type Metadata struct {
+	NumberSegments int
+	OriginalURL    string
+	StartStop      []float64
+}
+
 type Render struct {
-	PianoCount   string
-	CountryCount string
-	Heading      string
-	Title        string
 	MessageError string
 	MessageInfo  string
-	BreadCrumbs  []Href
-	Links        []Href
-	RefererURL   string
-	Description  string
+	Metadata Metadata
 }
 
 var t map[string]*template.Template
@@ -152,12 +151,24 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
 
-	err = generateUserData(audioURL[0], startStop)
+	uuid, err := generateUserData(audioURL[0], startStop)
 	if err != nil {
 		return
 	}
 
-	t["main"].Execute(w, Render{})
+	metadatab, err := ioutil.ReadFile(path.Join("data",uuid,"metadata.json"))
+	if err != nil {
+		return
+	}
+	var metadata Metadata
+	err = json.Unmarshal(metadatab,&metadata))
+	if err != nil {
+		return
+	}
+
+	t["main"].Execute(w, Render{
+Metadata: metadata,
+	})
 	return
 }
 
@@ -170,28 +181,21 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-type Metadata struct {
-	NumberSegments int
-	OriginalURL    string
-	StartStop      []float64
-}
 
-func generateUserData(u string, startStop []float64) (err error) {
+
+func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	log.Debug(u, startStop)
 
-	uuid := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
+	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
 
 	_, errstat := os.Stat(pathToData)
 	if errstat == nil {
+		// already exists, done here
 		return
 	}
-
-	// TODO: check if already exists
-	// for now, just dleete
-	os.RemoveAll(pathToData)
 
 	err = os.Mkdir(pathToData, os.ModePerm)
 	if err != nil {
