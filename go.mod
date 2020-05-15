@@ -1,4 +1,4 @@
-module github.com/schollz/op1-aiff
+module github.com/schollz/teoperator
 
 go 1.14
 

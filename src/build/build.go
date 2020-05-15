@@ -1,4 +1,4 @@
-package transform
+package build
 
 import (
 	"fmt"
@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	log "github.com/schollz/logger"
-	"github.com/schollz/op1-aiff/src/audiosegment"
+	"github.com/schollz/teoperator/src/audiosegment"
 )
 
-// AudioToDrumPatch takes an audio file and converts to drum patches
-func AudioToDrumPatch(fnameAudio string) (patches []string, err error) {
+// DrumpatchFromAudio takes an audio file and converts to drum patches
+func DrumpatchFromAudio(fnameAudio string) (patches []string, err error) {
 	_, fname := filepath.Split(fnameAudio)
 	extension := filepath.Ext(fname)
 	fname = fname[0 : len(fname)-len(extension)]

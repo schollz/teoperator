@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/schollz/logger"
-	"github.com/schollz/op1-aiff/src/utils"
-	"github.com/schollz/op1-aiff/src/waveform"
+	"github.com/schollz/teoperator/src/utils"
+	"github.com/schollz/teoperator/src/waveform"
 )
 
 type AudioSegment struct {
