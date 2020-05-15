@@ -220,8 +220,12 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 // Truncate will truncate a file, while converting it to 44100
 func Truncate(fnameIn, fnameOut, from, to string) (err error) {
 	defer os.Remove("temp.wav")
+	err = Convert(fnameIn, "temp.wav")
+	if err != nil {
+		return
+	}
 
-	cmd := fmt.Sprintf("-y -i %s temp.wav", fnameIn)
+	cmd := fmt.Sprintf("-y -i temp.wav -c copy -ss %s -to %s -ar 44100 %s", from, to, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
@@ -229,10 +233,13 @@ func Truncate(fnameIn, fnameOut, from, to string) (err error) {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())
 		return
 	}
+	return
+}
 
-	cmd = fmt.Sprintf("-y -i temp.wav -c copy -ss %s -to %s -ar 44100 %s", from, to, fnameOut)
+func Convert(fnameIn, fnameOut string) (err error) {
+	cmd := fmt.Sprintf("-y -i %s %s", fnameIn, fnameOut)
 	logger.Debug(cmd)
-	out, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
 	if err != nil {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())

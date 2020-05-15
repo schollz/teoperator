@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,8 +19,11 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/schollz/httpfileserver"
 	log "github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/audiosegment"
 	"github.com/schollz/teoperator/src/build"
 	"github.com/schollz/teoperator/src/download"
+	"github.com/schollz/teoperator/src/op1"
+	"github.com/schollz/teoperator/src/utils"
 )
 
 func Run(port int) (err error) {
@@ -49,6 +53,7 @@ type Href struct {
 }
 
 type Metadata struct {
+	Name        string
 	UUID        string
 	Segments    []int
 	OriginalURL string
@@ -94,6 +99,10 @@ func loadTemplates() {
 		},
 		"mod": func(i, j int) bool {
 			return i%j == 0
+		},
+		"urlbase": func(s string) string {
+			uparsed, _ := url.Parse(s)
+			return filepath.Base(uparsed.Path)
 		},
 	}
 	for _, templateName := range []string{"main"} {
@@ -214,7 +223,22 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 		return
 	}
 
-	numSegments, err := build.DrumpatchFromAudio(fname)
+	// build the drum patch
+	fnameShort, numSegments, err := build.DrumpatchFromAudio(fname, startStop)
+	if err != nil {
+		return
+	}
+
+	// no breaks, just get the first 11.75 seconds
+	err = audiosegment.Truncate(fname, path.Join(pathToData, fnameShort+"-full.wav"), utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[0]+11.75))
+	if err != nil {
+		return
+	}
+	err = op1.DrumPatch(path.Join(pathToData, fnameShort+"-full.wav"), path.Join(pathToData, fnameShort+"-full.aif"), op1.Default())
+	if err != nil {
+		return
+	}
+	err = os.Remove(path.Join(pathToData, fnameShort+"-full.wav"))
 	if err != nil {
 		return
 	}
@@ -225,6 +249,8 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 		segnums = append(segnums, i)
 	}
 	b, _ := json.Marshal(Metadata{
+		Name:        fnameShort,
+		UUID:        uuid,
 		Segments:    segnums,
 		OriginalURL: u,
 		StartStop:   startStop,

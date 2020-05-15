@@ -3,19 +3,30 @@
 ((.))
 (( end ))
 <div class="pt1">
-    <img src="/data/(($.Metadata.UUID))/split-merge.png" width=100%> 
-    </div>
+    <p>generated from '<a href="$.Metadata.OriginalURL">((urlbase $.Metadata.OriginalURL ))</a>'</p>
+    <img src="/data/(($.Metadata.UUID))/(($.Metadata.Name))-split-merge.png" width=100%> 
+    <audio controls>
+        <source src="/data/(($.Metadata.UUID))/(($.Metadata.Name)).mp3" type="audio/mp3" />
+            Your browser does not support the audio tag.
+    </audio>
+</div>
     
+<div class="pt3">
+    <p>the following are generated for op-1 drums. you can click the waveform to download an .aif file to load onto the op-1.</p>
+</div>
 (( range .Metadata.Segments))
  
- <div class="pt1">
-<img src="/data/(($.Metadata.UUID))/splitmerge((.))-merge.png"> 
-</div>
+<div class="pt1">
+<p>(($.Metadata.Name))-((.))</p>
+<p>
+<a href="/data/(($.Metadata.UUID))/(($.Metadata.Name))-((.)).aif" download><img src="/data/(($.Metadata.UUID))/(($.Metadata.Name))-((.))-merge.png"></a>
+<br>
 <audio controls>
-    <source src="/data/(($.Metadata.UUID))/done-((.)).aif" type="audio/aiff">
- <source src="/data/(($.Metadata.UUID))/merge-((.)).wav" type="audio/wav">
-            Your browser does not support the audio tag.
-  </audio>
- ((end))
+    <source src="/data/(($.Metadata.UUID))/(($.Metadata.Name))-((.)).mp3" type="audio/mp3" />
+        Your browser does not support the audio tag.
+</audio>
+</p>
+</div>
+((end))
 
 ((template "footer" .))

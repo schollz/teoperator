@@ -5,19 +5,31 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/audiosegment"
 	"github.com/schollz/teoperator/src/op1"
+	"github.com/schollz/teoperator/src/utils"
 )
 
 // DrumpatchFromAudio takes an audio file and converts to drum patches
-func DrumpatchFromAudio(fnameAudio string) (numSegments int, err error) {
-	folder, _ := filepath.Split(fnameAudio)
+func DrumpatchFromAudio(fnameAudio string, startStop []float64) (fnameShort string, numSegments int, err error) {
+	var folder string
+	folder, fnameShort = filepath.Split(fnameAudio)
+	if len(fnameShort) > 6 {
+		fnameShort = fnameShort[:6]
+	}
+	fnameShort = strings.ToLower(fnameShort)
 
 	// first truncate the audio to only the first minute, while transforming it to a 44100 wav
 	truncatedWav := path.Join(folder, "truncated.wav")
-	err = audiosegment.Truncate(fnameAudio, truncatedWav, "00:00:00.00", "00:00:59.00")
+
+	// make it at least 11.75
+	if startStop[1]-startStop[0] < 11.75 {
+		startStop[1] = 11.75
+	}
+	err = audiosegment.Truncate(fnameAudio, truncatedWav, utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[1]))
 	if err != nil {
 		log.Debug(err)
 		return
@@ -33,13 +45,13 @@ func DrumpatchFromAudio(fnameAudio string) (numSegments int, err error) {
 	log.Debugf("segments: %+v", segments)
 
 	// create the splits
-	splitSegments, err := audiosegment.Split(segments, path.Join(folder, "split"), true)
+	splitSegments, err := audiosegment.Split(segments, path.Join(folder, fnameShort+"-split"), true)
 	if err != nil {
 		log.Debug(err)
 		return
 	}
 
-	mergedSegments, err := audiosegment.Merge(splitSegments, path.Join(folder, "merge"), 6)
+	mergedSegments, err := audiosegment.Merge(splitSegments, path.Join(folder, fnameShort+"-merge"), 11.5)
 	if err != nil {
 		log.Debug(err)
 		return
@@ -56,7 +68,7 @@ func DrumpatchFromAudio(fnameAudio string) (numSegments int, err error) {
 		}
 
 		// generate splitmergeX-merge.png (remove everything else)
-		splitMergedSegments, err = audiosegment.Split(mergedSegmentsSegments, path.Join(folder, fmt.Sprintf("splitmerge%d", i)), false)
+		splitMergedSegments, err = audiosegment.Split(mergedSegmentsSegments, path.Join(folder, fmt.Sprintf("%s-%d", fnameShort, i)), false)
 		if err != nil {
 			log.Debug(err)
 			return
@@ -90,16 +102,29 @@ func DrumpatchFromAudio(fnameAudio string) (numSegments int, err error) {
 			}
 		}
 		// write as op1 data
-		err = op1.DrumPatch(allSegments[i][0].Filename, path.Join(folder, fmt.Sprintf("%s-%d.aif", "done", i)), op1data)
+		err = op1.DrumPatch(allSegments[i][0].Filename, path.Join(folder, fmt.Sprintf("%s-%d.aif", fnameShort, i)), op1data)
 		if err != nil {
 			return
 		}
+
+		err = audiosegment.Convert(allSegments[i][0].Filename, path.Join(folder, fmt.Sprintf("%s-%d.mp3", fnameShort, i)))
+		if err != nil {
+			return
+		}
+
 		// remove wav data
-		// err = os.Remove(allSegments[i][0].Filename)
-		// if err != nil {
-		// 	return
-		// }
+		err = os.Remove(allSegments[i][0].Filename)
+		if err != nil {
+			return
+		}
 	}
 	numSegments = len(allSegments)
+
+	err = audiosegment.Convert(path.Join(folder, "truncated.wav"), path.Join(folder, fmt.Sprintf("%s.mp3", fnameShort)))
+	if err != nil {
+		return
+	}
+	err = os.Remove(path.Join(folder, "truncated.wav"))
+
 	return
 }
