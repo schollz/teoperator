@@ -23,3 +23,10 @@ func TestConvertToSeconds(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 11.5, seconds)
 }
+
+func TestSecondsToString(t *testing.T) {
+	assert.Equal(t, "00:01:04.23", SecondsToString(64.23))
+	assert.Equal(t, "00:01:30.23", SecondsToString(90.23))
+	assert.Equal(t, "00:03:00.23", SecondsToString(180.23))
+	assert.Equal(t, "01:01:30.23", SecondsToString(3690.23))
+}

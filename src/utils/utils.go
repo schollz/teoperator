@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -38,4 +40,22 @@ func ConvertToSeconds(s string) (seconds float64, err error) {
 		seconds += partf * multipliers[i]
 	}
 	return
+}
+
+// SecondsToString seconds like 80 to a string like 00:01:20.00
+func SecondsToString(seconds float64) string {
+	hours := math.Floor(seconds / 3600)
+	seconds = seconds - hours*3600
+
+	minutes := math.Floor(seconds / 60)
+	seconds = seconds - minutes*60
+
+	s := fmt.Sprintf("%02d:%02d:%02.4f", int(hours), int(minutes), seconds)
+	if seconds < 10 {
+		s = fmt.Sprintf("%02d:%02d:0%2.4f", int(hours), int(minutes), seconds)
+	}
+	for i := 0; i < 3; i++ {
+		s = strings.TrimSuffix(s, "0")
+	}
+	return s
 }
