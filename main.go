@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -188,7 +190,7 @@ func ConvertToSeconds(s string) (seconds float64, err error) {
 }
 
 func run() (err error) {
-	b, err := ioutil.ReadFile("1.aif")
+	b, err := ioutil.ReadFile("test1.aif")
 	if err != nil {
 		return
 	}
@@ -204,13 +206,21 @@ func run() (err error) {
 	fmt.Println(b[start : start+end+4])
 	fmt.Println(string(b[start+12 : start+end-2]))
 
+	var mySlice = []byte{0, 0, 4, 198}
+	data := binary.BigEndian.Uint32(mySlice)
+	fmt.Println(data)
+
+	bs := make([]byte, 4)
+	binary.BigEndian.PutUint32(bs, data)
+	fmt.Println(bs)
+
 	startBytes := []byte{65, 80, 80, 76, 0, 0, 4, 198, 111, 112, 45, 49}
 	endBytes := []byte{10, 32}
 	fmt.Println(bytes.Equal(startBytes, b[start:start+12]))
 	fmt.Println(bytes.Equal(endBytes, b[start+end-2:start+end]))
 	fmt.Printf("starter %+v", b[start:start+12])
 	fmt.Printf("end %+v", b[start+end-2:start+end])
-
+	fmt.Println(len(b[start+12 : start+end-2]))
 	var op1data OP1MetaData
 	err = json.Unmarshal(b[start+12:start+end-2], &op1data)
 	if err != nil {
@@ -220,16 +230,47 @@ func run() (err error) {
 	fmt.Println(len(op1data.End))
 
 	// modify one end point of the first one
-	op1data.End[0] = op1data.End[0] / 2
+	op1data.Start[0] = int(0.2 * 44100 * 4096)
+	op1data.End[0] = int(0.4 * 44100 * 4096)
+	op1data.Start[1] = int(0.4 * 44100 * 4096)
 
 	bop1, err := json.Marshal(op1data)
 	if err != nil {
 		return
 	}
-	b2 := append([]byte{}, b[:start+4]...)
-	b2 = append(b2, bop1...)
-	b2 = append(b2, b[start+end+1:]...)
-	err = ioutil.WriteFile("2.aif", b2, 0644)
+	fmt.Println(string(bop1))
+	fmt.Println(len(bop1))
+
+	filler := []byte{10}
+
+	for {
+		b2 := append([]byte{}, b[:start+4]...)
+		// new size
+		bsSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsSize, uint32(4+len(filler)+len(bop1)))
+		fmt.Println(bsSize)
+		b2 = append(b2, bsSize...)
+		b2 = append(b2, []byte{111, 112, 45, 49}...)
+		b2 = append(b2, bop1...)
+		fmt.Println(len(b2))
+		b2 = append(b2, filler...)
+		b2 = append(b2, b[start+end:]...)
+
+		totalsize := len(b2) - 8
+		fmt.Println(totalsize)
+		bsTotalSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsTotalSize, uint32(totalsize))
+		b3 := append([]byte{}, b2[:4]...)
+		b3 = append(b3, bsTotalSize...)
+		b3 = append(b3, b2[8:]...)
+		if math.Mod(float64(totalsize), 4.0) == 0 {
+			err = ioutil.WriteFile("test2.aif", b3, 0644)
+			break
+		} else {
+			filler = append(filler, []byte{30}...)
+			fmt.Println(filler)
+		}
+	}
 
 	return
 }
