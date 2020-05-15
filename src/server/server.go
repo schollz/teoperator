@@ -20,6 +20,7 @@ func Run(port int) (err error) {
 	loadTemplates()
 	log.Infof("listening on :%d", port)
 	http.HandleFunc("/static/", httpfileserver.New("/static/", "static/", httpfileserver.OptionNoCache(true)).Handle())
+	http.HandleFunc("/data/", httpfileserver.New("/data/", "data/", httpfileserver.OptionNoCache(true)).Handle())
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	return
