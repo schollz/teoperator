@@ -169,6 +169,10 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 	if err != nil {
 		return
 	}
+	if !strings.HasSuffix(outfname, ".wav") {
+		err = fmt.Errorf("must have wav")
+		return
+	}
 	// defer os.Remove(f.Name())
 
 	for _, fname := range fnames {
@@ -205,6 +209,18 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 	out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("audiowaveform: %s", out)
+		return
+	}
+	return
+}
+
+func Truncate(fname string) (err error) {
+	cmd := fmt.Sprintf("-y -i %s -c copy -ss 0 -to 00:01:00 0%s", fname, fname)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	logger.Debugf("ffmpeg: %s", out)
+	if err != nil {
+		err = fmt.Errorf("ffmpeg; %s", err.Error())
 		return
 	}
 	return

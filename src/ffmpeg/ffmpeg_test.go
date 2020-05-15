@@ -45,7 +45,7 @@ func TestSplitAndMerge(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	segment, err := MergeAudioFiles([]string{"tests/1.aif", "tests/1.aif"}, "1-1.aif")
+	segment, err := MergeAudioFiles([]string{"tests/1.aif", "tests/1.aif"}, "1-1.wav")
 	assert.Nil(t, err)
 	fmt.Println(segment)
 }
