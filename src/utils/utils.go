@@ -21,6 +21,7 @@ func GetStringInBetween(str string, start string, end string) (result string) {
 
 // ConvertToSeconds converts a string lik 00:00:11.35 into seconds (11.35)
 func ConvertToSeconds(s string) (seconds float64, err error) {
+	s = strings.TrimSpace(s)
 	parts := strings.Split(s, ":")
 	multipliers := []float64{60 * 60, 60, 1}
 	if len(parts) == 2 {

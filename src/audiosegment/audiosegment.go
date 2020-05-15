@@ -46,18 +46,25 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 				segment.Filename = fname
 				segment.Duration = segment.End - segment.Start
 				segments = append(segments, segment)
+			} else {
+				logger.Debug(err)
 			}
 		} else if strings.Contains(line, "silence_end") {
 			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
 			if err == nil {
 				segment.Start = seconds
+			} else {
+				logger.Debug(err)
 			}
 		} else if strings.Contains(line, "time=") {
 			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "time=", " "))
 			if err == nil {
 				segment.End = seconds
 				segment.Duration = segment.End - segment.Start
+				segment.Filename = fname
 				segments = append(segments, segment)
+			} else {
+				logger.Debug(err)
 			}
 		}
 	}
@@ -86,7 +93,7 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 		splitSegments[i].Filename = fmt.Sprintf("%s%d.wav", fnamePrefix, i)
 		splitSegments[i].Duration += 0.1
 		var out []byte
-		cmd := fmt.Sprintf("-y -i %s -acodec copy -ss %2.8f -to %2.8f 0%s", segments[i].Filename, segments[i].Start, segments[i].End, splitSegments[i].Filename)
+		cmd := fmt.Sprintf("-y -i %s -acodec copy -ss %2.8f -to %2.8f %s.0.wav", segments[i].Filename, segments[i].Start, segments[i].End, splitSegments[i].Filename)
 		if !addsilence {
 			cmd = fmt.Sprintf("-y -i %s -acodec copy -ss %2.8f -to %2.8f %s", segments[i].Filename, segments[i].Start, segments[i].End, splitSegments[i].Filename)
 		}
@@ -98,14 +105,14 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 		}
 		if addsilence {
 			// -af 'apad=pad_dur=0.1' adds SECONDSATEND milliseconds of silence to the end
-			cmd = fmt.Sprintf("-y -i 0%s -af apad=pad_dur=%2.3f %s", splitSegments[i].Filename, SECONDSATEND, splitSegments[i].Filename)
+			cmd = fmt.Sprintf("-y -i %s.0.wav -af apad=pad_dur=%2.3f %s", splitSegments[i].Filename, SECONDSATEND, splitSegments[i].Filename)
 			logger.Debug(cmd)
 			out, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 			if err != nil {
 				logger.Errorf("ffmpeg: %s", out)
 				return
 			}
-			os.Remove(fmt.Sprintf("0%s", splitSegments[i].Filename))
+			os.Remove(fmt.Sprintf("%s.0.wav", splitSegments[i].Filename))
 		}
 	}
 
@@ -114,7 +121,6 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 	allfnames := make([]string, len(splitSegments))
 	for i := range splitSegments {
 		allfnames[i] = fmt.Sprintf("%s.png", splitSegments[i].Filename)
-		var out []byte
 		color := colors[int(math.Mod(float64(i), 2))]
 		err = waveform.Image(splitSegments[i].Filename, color, splitSegments[i].Duration)
 		if err != nil {
@@ -128,7 +134,7 @@ func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitS
 	if runtime.GOOS == "windows" {
 		cmd0 = "imconvert"
 	}
-	out, err := exec.Command(cmd0), strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command(cmd0, strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 		return
