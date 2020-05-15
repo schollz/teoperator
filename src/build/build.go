@@ -8,6 +8,7 @@ import (
 
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/audiosegment"
+	"github.com/schollz/teoperator/src/op1"
 )
 
 // DrumpatchFromAudio takes an audio file and converts to drum patches
@@ -52,34 +53,59 @@ func DrumpatchFromAudio(fnameAudio string) (patches []string, err error) {
 	}
 
 	// split the new merged segments on silence
+	var allSegments [][]audiosegment.AudioSegment
 	for i, mergeSegment := range mergedSegments {
-		mergedSegmentsSegments, err0 := audiosegment.SplitOnSilence(mergeSegment.Filename, -25, 0.05)
-		if err0 != nil {
-			err = err0
+		var mergedSegmentsSegments, splitMergedSegments []audiosegment.AudioSegment
+		mergedSegmentsSegments, err = audiosegment.SplitOnSilence(mergeSegment.Filename, -25, 0.05)
+		if err != nil {
 			log.Debug(err)
 			return
 		}
 
-		splitMergedSegments, err0 := audiosegment.Split(mergedSegmentsSegments, path.Join(fname, fmt.Sprintf("splitmerge%d", i)), false)
-		if err0 != nil {
-			err = err0
+		// generate splitmergeX-merge.png (remove everything else)
+		splitMergedSegments, err = audiosegment.Split(mergedSegmentsSegments, path.Join(fname, fmt.Sprintf("splitmerge%d", i)), false)
+		if err != nil {
 			log.Debug(err)
 			return
 		}
 		for _, segment := range splitMergedSegments {
+			log.Debug(segment.Filename)
 			os.Remove(segment.Filename)
 			os.Remove(segment.Filename + ".png")
 		}
+		allSegments = append(allSegments, mergedSegmentsSegments)
 	}
 
 	// remove unnessecary files
-	for _, segment := range mergedSegments {
-		os.Remove(segment.Filename + ".png")
-	}
 	for _, segment := range splitSegments {
 		log.Debug(segment.Filename)
 		os.Remove(segment.Filename)
 		os.Remove(segment.Filename + ".png")
+	}
+	for _, segment := range mergedSegments {
+		log.Debug(segment)
+		os.Remove(segment.Filename + ".png")
+	}
+
+	for i := range allSegments {
+		op1data := op1.Default()
+		for j := range allSegments[i] {
+			log.Debug(allSegments[i][j])
+			if j < len(op1data.End) {
+				op1data.Start[j] = int(allSegments[i][j].Start * 44100 * 4096)
+				op1data.End[j] = int(allSegments[i][j].End * 44100 * 4096)
+			}
+		}
+		// write as op1 data
+		err = op1.DrumPatch(allSegments[i][0].Filename, path.Join(fname, fmt.Sprintf("%s-%d.aif", fname, i)), op1data)
+		if err != nil {
+			return
+		}
+		// remove wav data
+		// err = os.Remove(allSegments[i][0].Filename)
+		// if err != nil {
+		// 	return
+		// }
 	}
 	return
 }

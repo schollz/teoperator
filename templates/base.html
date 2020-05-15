@@ -1,0 +1,386 @@
+(( define "header" ))
+<html>
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>carp | nts-1 sequencer</title>
+        <style>
+            /* some basic styling to make things pretty */
+      *,
+      *:before,
+      *:after {
+          box-sizing: border-box;
+          padding: 0;
+          margin: 0;
+      }
+    
+      body {
+          background: #0077b6;
+          color: white;
+          padding-top: 1em;
+          padding-bottom: 2em;
+      }
+    
+      .mw30 {
+          width: 80%;
+          max-width: 40em;
+          margin: auto;
+          border: 0 none;
+      }
+    
+      legend {
+          font-size: 1.2em;
+          width: 100%;
+          border-bottom: 1px dotted #99c;
+      }
+    
+      fieldset div {
+          margin: 4px 0;
+      }
+    
+      input,
+      textarea,
+      select {
+          font-size: 1em;
+          padding: 2px 5px 4px;
+      }
+    
+      /* flexbox styles */
+      fieldset div {
+          display: flex;
+          align-items: center;
+      }
+    
+      label {
+          order: 1;
+          width: 10em;
+          text-align: right;
+          padding-right: 0.5em;
+          white-space: nowrap;
+          user-select: none;
+          cursor: pointer;
+      }
+    
+      div,
+      button,
+      input,
+      textarea,
+      select {
+          order: 2;
+          flex: 1 1 auto;
+      }
+    
+      input[type="checkbox"],
+      input[type="radio"] {
+          order: 1;
+          flex: none;
+          width: auto;
+          margin-left: 10em;
+      }
+    
+      input[type="checkbox"]~label,
+      input[type="radio"]~label {
+          width: auto;
+          text-align: left;
+          padding-left: 0.4em;
+      }
+    
+      /* label state styles */
+      input:focus~label,
+      textarea:focus~label,
+      select:focus~label {
+          color: #FAFAD2;
+      }
+    
+      input:checked~label {
+          font-weight: bold;
+      }
+    
+      #app {
+          padding-top: 3em;
+          padding-left: 0.5em;
+          padding-right: 0.5em;
+      }
+    
+      .button {
+          width: 8em;
+          padding: 0.5em;
+      }
+    
+      .error {
+          color: #FFDAB9;
+      }
+    
+      .success {
+          color: #98FB98;
+      }
+    
+      .current {
+        color: #98FB98;
+        font-weight: 900;
+        font-size: 150%;
+      }
+    
+      .pt1 {
+          padding-top: 1em;
+      }
+    
+      .pt05 {
+          padding-top: 0.5em;
+      }
+    
+      dl {
+          padding: 0.1em;
+      }
+    
+      dt {
+          float: left;
+          clear: left;
+          text-align: right;
+          font-weight: bold;
+          color: #20B2AA;
+          padding-left: 1em;
+      }
+    
+      li > a {
+          color: #20B2AA;
+          font-size: 80%;
+          padding-left: 1em;
+      }
+    
+      ul {
+           list-style-type: none;
+      }
+    
+      dt::after {
+          content: ":";
+          padding-right: 0.5em;
+      }
+    
+      dd {}
+    
+      input,
+      button,
+      body,
+      p {
+          font-family: "Lucida Console", Monaco, monospace
+      }
+    
+      .link {
+          cursor: pointer;
+          text-decoration: underline;
+      }
+    
+      input,
+      button {
+          background: #0077b6;
+          border: 1px solid white;
+          border-radius: 4px;
+          color: white;
+          padding: 0.5em;
+      }
+    
+      button {
+          cursor: pointer;
+      }
+    
+      button:hover {
+          background-color: white;
+          /* Green */
+          color: #0077b6;
+      }
+    
+      input:focus {
+          background-color: white;
+          /* Green */
+          color: #0077b6;
+      }
+    
+      a {
+          color: white;
+      }
+    
+      a:hover {
+          color: #FAFAD2;
+      }
+    
+      dd,
+      dt {
+          font-size: 80%;
+      }   
+    
+      .video {
+        margin: 0 auto;
+        border: 5px outset #ddd;
+        border-radius: 8px;
+        padding: 0.5em;
+    }
+    
+    .beatnum {
+        padding-right: 1em;
+    }
+    </style>
+    </head>
+    
+    <body style="">
+        <div id="app">
+            <fieldset class="mw30">
+                <legend>
+                    <pre style="float:right; text-align: right;">
+                                  _///_  
+                                 /o    \/
+                                 > ))_./\
+                            <    </pre><span style="font-size:1.5em">carp | nts-1 sequencer</span>
+                </legend>
+                <div>
+                    <input id="inputChords" name="inputChords" type="text" v-model="inputChords" />
+                    <label for="name">chords</label>
+                </div>
+                <div>
+                    <input type="number" id="fname" name="fname" v-model="bpm">
+                    <label for="name">bpm:</label>
+                </div>
+                <div>
+                    <input type="number" id="fname" name="fname" v-model="beats_per_chord">
+                    <label for="name">beats per chord:</label>
+                </div>
+                <div>
+                    <input type="number" id="fname" name="fname" v-model="midi_octave">
+                    <label for="name">octave:</label>
+                </div>
+                <div>
+                    <input type="number" id="fname" name="fname" v-model="arp_length" v-on:change="update_arp_length">
+                    <label for="name">arp length:</label>
+                </div>
+                <div>
+                    <button class="button" v-on:click="start" style="margin-right: 0.25em;">Start</button>
+                    <button class="button" v-on:click="stop" style="margin-left: 0.25em;">Stop</button>
+                    <label for="name">init:</label>
+                </div>
+                <!--             <div>
+                            <select id="experience" name="experience">
+                                <option value="1">1 year or less</option>
+                                <option value="2">2 years</option>
+                                <option value="3">3 - 4 years</option>
+                                <option value="5">5 years or more</option>
+                            </select>
+                            <label for="experience">exper jkl jlkj lkj lkj lkj lkj lkj lkj ience</label>
+                        </div> -->
+                <!--             <div>
+                            <input id="html" name="html" type="checkbox" />
+                            <label for="html">checkbox</label>
+                        </div>
+                        -->
+            </fieldset>
+            <div class="mw30">                
+                <div>
+                    <p>
+                        carp is a sequencer for <em>chord arpeggios</em> on the korg nts-1. it allows you to harness the arp features (chords / arp patterrns) using sysex commands from the browser.
+                    </p>
+                    <p class="pt1">
+                        <strong>instructions:</strong>
+                    </p>
+                    <p class="pt05">
+                        first set the tempo on nts-1 device. hold "arp" and adjust "b" to the bpm. now, set "bpm" in this window to the corresponding tempo (or 2x that).
+                    </p>
+                    <p class="pt05">
+                        set the nts-1 into hold mode by holding down "arp" until it starts blinking.
+                    </p>
+                    <p class="pt05">
+                        enter chords into carp.
+                        enter the chord, followed by the arp pattern in parentheses.
+                        for example, a Bb minor chord with up-down arpeggio would be <em>Bbmin(ud)</em>.
+                    </p>
+                    <p class="pt05">
+                        press "start". it will play the corresponding chord and corresponding arp using sysex commands. you can modify the parameteres you set in realtime.
+                    </p>
+                    <p class="pt05">
+                        to stop, press "stop" in carp and then hold down the "arp" button to deactivate hold on the nts-1.
+                    </p>
+                </div>
+                <br>
+                <table width="100%">
+                    <tr>
+                        <td width="50%" style=" vertical-align:top">
+                            <p>
+                                <strong>allowed chords:</strong>
+                                <dl>
+                                    <dt>maj (or nothing)</dt>
+                                    <dd>major</dd>
+                                </dl>
+                                <dl>
+                                    <dt>min (or m)</dt>
+                                    <dd>minor</dd>
+                                </dl>
+                                <dl>
+                                    <dt>sus</dt>
+                                    <dd>sustained</dd>
+                                </dl>
+                                <dl>
+                                    <dt>aug</dt>
+                                    <dd>augmented</dd>
+                                </dl>
+                                <dl>
+                                    <dt>dim</dt>
+                                    <dd>diminished</dd>
+                                </dl>
+                            </p>
+                        </td>
+                        <td width="50%" style=" vertical-align:top">
+                            <p>
+                                <strong>allowed arps:</strong>
+                                <dl>
+                                    <dt>u</dt>
+                                    <dd>up</dd>
+                                </dl>
+                                <dl>
+                                    <dt>d</dt>
+                                    <dd>down</dd>
+                                </dl>
+                                <dl>
+                                    <dt>ud</dt>
+                                    <dd>up-down</dd>
+                                </dl>
+                                <dl>
+                                    <dt>du</dt>
+                                    <dd>down-up</dd>
+                                </dl>
+                                <dl>
+                                    <dt>c</dt>
+                                    <dd>converge</dd>
+                                </dl>
+                                <dl>
+                                    <dt>v</dt>
+                                    <dd>diverge</dd>
+                                </dl>
+                                <dl>
+                                    <dt>cv</dt>
+                                    <dd>converge-diverge</dd>
+                                </dl>
+                                <dl>
+                                    <dt>vc</dt>
+                                    <dd>diverge-converge</dd>
+                                </dl>
+                                <dl>
+                                    <dt>r</dt>
+                                    <dd>random</dd>
+                                </dl>
+                                <dl>
+                                    <dt>s</dt>
+                                    <dd>stochastic</dd>
+                                </dl>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <div class="pt1" style="text-align: right;">
+                    <small>Made by <a href="https://github.com/schollz/carp">@schollz</a> under MIT.</small>
+                </div>
+            </div>
+        </div>
+(( end ))
+(( define "footer" ))
+    </body>
+    
+</html>
+((end ))
