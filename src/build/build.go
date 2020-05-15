@@ -66,8 +66,20 @@ func DrumpatchFromAudio(fnameAudio string) (patches []string, err error) {
 			log.Debug(err)
 			return
 		}
-		log.Debug(splitMergedSegments)
+		for _, segment := range splitMergedSegments {
+			os.Remove(segment.Filename)
+			os.Remove(segment.Filename + ".png")
+		}
 	}
 
+	// remove unnessecary files
+	for _, segment := range mergedSegments {
+		os.Remove(segment.Filename + ".png")
+	}
+	for _, segment := range splitSegments {
+		log.Debug(segment.Filename)
+		os.Remove(segment.Filename)
+		os.Remove(segment.Filename + ".png")
+	}
 	return
 }
