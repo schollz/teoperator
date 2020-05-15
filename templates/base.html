@@ -227,36 +227,31 @@
             <fieldset class="mw30">
                 <legend>
                     <pre style="float:right; text-align: right;">
-                                  _///_  
-                                 /o    \/
-                                 > ))_./\
-                            <    </pre><span style="font-size:1.5em">carp | nts-1 sequencer</span>
+
+   </pre><span style="font-size:1.5em">op</span>
                 </legend>
+                <form action="/patch" method="get">
                 <div>
-                    <input id="inputChords" name="inputChords" type="text" v-model="inputChords" />
-                    <label for="name">chords</label>
+                    <input id="audioURL" name="audioURL" type="text" />
+                    <label for="audioURL">url:</label>
                 </div>
                 <div>
-                    <input type="number" id="fname" name="fname" v-model="bpm">
-                    <label for="name">bpm:</label>
+                    <input type="number" id="secondsStart" name="secondsStart">
+                    <label for="secondsStart">start:</label>
                 </div>
                 <div>
-                    <input type="number" id="fname" name="fname" v-model="beats_per_chord">
-                    <label for="name">beats per chord:</label>
+                    <input type="number" id="secondsEnd" name="secondsEnd" >
+                    <label for="secondsEnd">end:</label>
                 </div>
                 <div>
-                    <input type="number" id="fname" name="fname" v-model="midi_octave">
-                    <label for="name">octave:</label>
+                            <input id="removeSilence" name="removeSilence" type="checkbox" />
+                            <label for="removeSilence">checkbox</label>
                 </div>
                 <div>
-                    <input type="number" id="fname" name="fname" v-model="arp_length" v-on:change="update_arp_length">
-                    <label for="name">arp length:</label>
-                </div>
-                <div>
-                    <button class="button" v-on:click="start" style="margin-right: 0.25em;">Start</button>
-                    <button class="button" v-on:click="stop" style="margin-left: 0.25em;">Stop</button>
+                    <button class="button" type="submit">Start</button>
                     <label for="name">init:</label>
                 </div>
+            </form>
                 <!--             <div>
                             <select id="experience" name="experience">
                                 <option value="1">1 year or less</option>
@@ -266,120 +261,31 @@
                             </select>
                             <label for="experience">exper jkl jlkj lkj lkj lkj lkj lkj lkj ience</label>
                         </div> -->
-                <!--             <div>
-                            <input id="html" name="html" type="checkbox" />
-                            <label for="html">checkbox</label>
-                        </div>
-                        -->
+
             </fieldset>
             <div class="mw30">                
                 <div>
                     <p>
-                        carp is a sequencer for <em>chord arpeggios</em> on the korg nts-1. it allows you to harness the arp features (chords / arp patterrns) using sysex commands from the browser.
+                       ((.MessageError))
+                    </p>
+                    <p>
+                        op is ...
                     </p>
                     <p class="pt1">
                         <strong>instructions:</strong>
                     </p>
                     <p class="pt05">
-                        first set the tempo on nts-1 device. hold "arp" and adjust "b" to the bpm. now, set "bpm" in this window to the corresponding tempo (or 2x that).
-                    </p>
-                    <p class="pt05">
-                        set the nts-1 into hold mode by holding down "arp" until it starts blinking.
-                    </p>
-                    <p class="pt05">
-                        enter chords into carp.
-                        enter the chord, followed by the arp pattern in parentheses.
-                        for example, a Bb minor chord with up-down arpeggio would be <em>Bbmin(ud)</em>.
-                    </p>
-                    <p class="pt05">
-                        press "start". it will play the corresponding chord and corresponding arp using sysex commands. you can modify the parameteres you set in realtime.
-                    </p>
-                    <p class="pt05">
-                        to stop, press "stop" in carp and then hold down the "arp" button to deactivate hold on the nts-1.
+                        first ... 
                     </p>
                 </div>
-                <br>
-                <table width="100%">
-                    <tr>
-                        <td width="50%" style=" vertical-align:top">
-                            <p>
-                                <strong>allowed chords:</strong>
-                                <dl>
-                                    <dt>maj (or nothing)</dt>
-                                    <dd>major</dd>
-                                </dl>
-                                <dl>
-                                    <dt>min (or m)</dt>
-                                    <dd>minor</dd>
-                                </dl>
-                                <dl>
-                                    <dt>sus</dt>
-                                    <dd>sustained</dd>
-                                </dl>
-                                <dl>
-                                    <dt>aug</dt>
-                                    <dd>augmented</dd>
-                                </dl>
-                                <dl>
-                                    <dt>dim</dt>
-                                    <dd>diminished</dd>
-                                </dl>
-                            </p>
-                        </td>
-                        <td width="50%" style=" vertical-align:top">
-                            <p>
-                                <strong>allowed arps:</strong>
-                                <dl>
-                                    <dt>u</dt>
-                                    <dd>up</dd>
-                                </dl>
-                                <dl>
-                                    <dt>d</dt>
-                                    <dd>down</dd>
-                                </dl>
-                                <dl>
-                                    <dt>ud</dt>
-                                    <dd>up-down</dd>
-                                </dl>
-                                <dl>
-                                    <dt>du</dt>
-                                    <dd>down-up</dd>
-                                </dl>
-                                <dl>
-                                    <dt>c</dt>
-                                    <dd>converge</dd>
-                                </dl>
-                                <dl>
-                                    <dt>v</dt>
-                                    <dd>diverge</dd>
-                                </dl>
-                                <dl>
-                                    <dt>cv</dt>
-                                    <dd>converge-diverge</dd>
-                                </dl>
-                                <dl>
-                                    <dt>vc</dt>
-                                    <dd>diverge-converge</dd>
-                                </dl>
-                                <dl>
-                                    <dt>r</dt>
-                                    <dd>random</dd>
-                                </dl>
-                                <dl>
-                                    <dt>s</dt>
-                                    <dd>stochastic</dd>
-                                </dl>
-                            </p>
-                        </td>
-                    </tr>
-                </table>
+                (( end ))
+                (( define "footer" ))
                 <div class="pt1" style="text-align: right;">
                     <small>Made by <a href="https://github.com/schollz/carp">@schollz</a> under MIT.</small>
                 </div>
             </div>
         </div>
-(( end ))
-(( define "footer" ))
+
     </body>
     
 </html>

@@ -1,10 +1,12 @@
 package server
 
 import (
+	"crypto/md5"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -116,6 +118,8 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		http.Redirect(w, r, "/static/sitemap.xml", http.StatusFound)
 	} else if r.URL.Path == "/" {
 		return viewMain(w, r, "", "main")
+	} else if r.URL.Path == "/patch" {
+		return viewPatch(w, r)
 	} else {
 		t["main"].Execute(w, Render{})
 	}
@@ -123,7 +127,35 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	return
 }
 
+func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
+	audioURL, _ := r.URL.Query()["audioURL"]
+	secondsStart, _ := r.URL.Query()["secondsStart"]
+	secondsEnd, _ := r.URL.Query()["secondsEnd"]
+
+	if len(audioURL[0]) == 0 {
+		err = fmt.Errorf("no URL")
+		return
+	}
+
+	startStop := []float64{0, 0}
+	if secondsStart[0] != "" {
+		startStop[0], _ = strconv.ParseFloat(secondsStart[0], 64)
+	}
+	if secondsEnd[0] != "" {
+		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
+	}
+
+	log.Debug(audioURL, startStop)
+
+	uuid := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprint("%+v %+v", audioURL, startStop))))
+	log.Debug(uuid)
+	t["main"].Execute(w, Render{})
+	err = nil
+	return
+}
+
 func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templateName string) (err error) {
+
 	t[templateName].Execute(w, Render{
 		Title:        "Pianos for Travelers",
 		MessageError: messageError,
