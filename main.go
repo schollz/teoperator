@@ -20,8 +20,7 @@ import (
 )
 
 func main() {
-
-	err := run()
+	err := run3()
 	if err != nil {
 		panic(err)
 	}
@@ -189,8 +188,60 @@ func ConvertToSeconds(s string) (seconds float64, err error) {
 	return
 }
 
+func run3() (err error) {
+	b, err := ioutil.ReadFile("111.aif")
+	if err != nil {
+		return
+	}
+	end := bytes.Index(b, []byte("SSND"))
+	if end < 0 {
+		return
+	}
+	start := end
+	fmt.Println(start)
+
+	op1data := DefaultOP1()
+	bop1, err := json.Marshal(op1data)
+	if err != nil {
+		return
+	}
+
+	filler := []byte{10}
+
+	for {
+		b2 := append([]byte{}, b[:start]...)
+		// AAPL
+		b2 = append(b2, []byte{65, 80, 80, 76}...)
+		// new size
+		bsSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsSize, uint32(4+len(filler)+len(bop1)))
+		b2 = append(b2, bsSize...)
+		// op-1
+		b2 = append(b2, []byte{111, 112, 45, 49}...)
+		b2 = append(b2, bop1...)
+		b2 = append(b2, filler...)
+		b2 = append(b2, b[end:]...)
+
+		totalsize := len(b2) - 8
+		bsTotalSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsTotalSize, uint32(totalsize))
+		b3 := append([]byte{}, b2[:4]...)
+		b3 = append(b3, bsTotalSize...)
+		b3 = append(b3, b2[8:]...)
+		if math.Mod(float64(totalsize), 4.0) == 0 {
+			err = ioutil.WriteFile("111-2.aif", b3, 0644)
+			break
+		} else {
+			filler = append(filler, []byte{30}...)
+			fmt.Println(filler)
+		}
+	}
+
+	return
+}
+
 func run() (err error) {
-	b, err := ioutil.ReadFile("test1.aif")
+	b, err := ioutil.ReadFile("111.aif")
 	if err != nil {
 		return
 	}
@@ -205,14 +256,6 @@ func run() (err error) {
 
 	fmt.Println(b[start : start+end+4])
 	fmt.Println(string(b[start+12 : start+end-2]))
-
-	var mySlice = []byte{0, 0, 4, 198}
-	data := binary.BigEndian.Uint32(mySlice)
-	fmt.Println(data)
-
-	bs := make([]byte, 4)
-	binary.BigEndian.PutUint32(bs, data)
-	fmt.Println(bs)
 
 	startBytes := []byte{65, 80, 80, 76, 0, 0, 4, 198, 111, 112, 45, 49}
 	endBytes := []byte{10, 32}
