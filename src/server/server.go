@@ -6,7 +6,9 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"strconv"
+	"net/url"
+	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/schollz/httpfileserver"
 	log "github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/download"
 )
 
 func Run(port int) (err error) {
@@ -129,29 +132,27 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
-	audioURL, _ := r.URL.Query()["audioURL"]
-	secondsStart, _ := r.URL.Query()["secondsStart"]
-	secondsEnd, _ := r.URL.Query()["secondsEnd"]
+	// audioURL, _ := r.URL.Query()["audioURL"]
+	// secondsStart, _ := r.URL.Query()["secondsStart"]
+	// secondsEnd, _ := r.URL.Query()["secondsEnd"]
 
-	if len(audioURL[0]) == 0 {
-		err = fmt.Errorf("no URL")
-		return
-	}
+	// if len(audioURL[0]) == 0 {
+	// 	err = fmt.Errorf("no URL")
+	// 	return
+	// }
 
-	startStop := []float64{0, 0}
-	if secondsStart[0] != "" {
-		startStop[0], _ = strconv.ParseFloat(secondsStart[0], 64)
-	}
-	if secondsEnd[0] != "" {
-		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
-	}
+	// startStop := []float64{0, 0}
+	// if secondsStart[0] != "" {
+	// 	startStop[0], _ = strconv.ParseFloat(secondsStart[0], 64)
+	// }
+	// if secondsEnd[0] != "" {
+	// 	startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
+	// }
 
-	log.Debug(audioURL, startStop)
+	// err = generateUserData(audio, startStop []float64)
 
-	uuid := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprint("%+v %+v", audioURL, startStop))))
-	log.Debug(uuid)
-	t["main"].Execute(w, Render{})
-	err = nil
+	// t["main"].Execute(w, Render{})
+	// err = nil
 	return
 }
 
@@ -161,5 +162,33 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 		Title:        "Pianos for Travelers",
 		MessageError: messageError,
 	})
+	return
+}
+
+func generateUserData(u string, startStop []float64) (err error) {
+	log.Debug(u, startStop)
+
+	uuid := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
+
+	// create path to data
+	pathToData := path.Join("data", uuid)
+	err = os.Mkdir(pathToData, os.ModePerm)
+	if err != nil {
+		return
+	}
+	fname := ""
+	uparsed, err := url.Parse(u)
+	if err != nil {
+		return
+	}
+	fname = path.Join(pathToData, path.Base(uparsed.Path))
+
+	log.Debugf("downloading to %s", fname)
+	err = download.Download(u, fname, 10000000)
+	if err != nil {
+		return
+	}
+
+	log.Debug(uuid)
 	return
 }
