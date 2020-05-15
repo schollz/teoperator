@@ -1,6 +1,17 @@
 package op1
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"math"
+	"os/exec"
+	"strings"
+
+	"github.com/schollz/logger"
+)
 
 var op1default OP1MetaData
 
@@ -36,4 +47,75 @@ type OP1MetaData struct {
 	Start       []int  `json:"start"`
 	Type        string `json:"type"`
 	Volume      []int  `json:"volume"`
+}
+
+// DrumPatch creates a drum patch from op1 meta data and a song clip
+func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error) {
+	if !strings.HasSuffix(fnameOut, ".aif") {
+		err = fmt.Errorf("%s does not have .aif", fnameOut)
+		return
+	}
+	// generate a merged audio waveform
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 %s", fnameIn, fnameOut)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
+		return
+	}
+
+	// inject the OP-1 metadata before teh SSND tag
+	b, err := ioutil.ReadFile(fnameOut)
+	if err != nil {
+		return
+	}
+
+	ssndTagPosition := bytes.Index(b, []byte("SSND"))
+	if ssndTagPosition < 0 {
+		err = fmt.Errorf("no SND tag")
+		return
+	}
+
+	op1dataBytes, err := json.Marshal(op1data)
+	if err != nil {
+		return
+	}
+
+	// filler is to pad the aif file so that it is a multiple of 4
+	filler := []byte{10}
+	for {
+		b2 := append([]byte{}, b[:ssndTagPosition]...)
+		// 4 bytes for AAPL tag, required to initiate op-1 data
+		b2 = append(b2, []byte{65, 80, 80, 76}...)
+		// 4 bytes to delcare size
+		bsSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsSize, uint32(4+len(filler)+len(op1dataBytes)))
+		b2 = append(b2, bsSize...)
+		// 4 bytes to write magic op-1
+		b2 = append(b2, []byte{111, 112, 45, 49}...)
+		// write the op1 meta data
+		b2 = append(b2, op1dataBytes...)
+		// add filler
+		b2 = append(b2, filler...)
+		// write the rest of the bytes
+		b2 = append(b2, b[ssndTagPosition:]...)
+
+		// set bytes 4-8 with the total size - 8 bytes
+		totalsize := len(b2) - 8
+		bsTotalSize := make([]byte, 4)
+		binary.BigEndian.PutUint32(bsTotalSize, uint32(totalsize))
+		b3 := append([]byte{}, b2[:4]...)
+		b3 = append(b3, bsTotalSize...)
+		b3 = append(b3, b2[8:]...)
+
+		// repeat until the the total bytes is a multiple of 4
+		if math.Mod(float64(totalsize), 4.0) == 0 {
+			err = ioutil.WriteFile(fnameOut, b3, 0644)
+			break
+		} else {
+			filler = append(filler, []byte{30}...)
+		}
+	}
+
+	return
 }
