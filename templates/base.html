@@ -347,8 +347,8 @@
    $('.waveform').click(
        function(e){
         console.log(e.currentTarget.id);
-        $( "#p" +e.currentTarget.id).toggle();
-        $( "#a" +e.currentTarget.id).toggle();
+        $( "#p" +e.currentTarget.id).fadeToggle("fast","swing");
+        $( "#a" +e.currentTarget.id).fadeToggle("fast","swing");
         console.log($( "#audio" +e.currentTarget.id).prop("paused"))
         if ($( "#audio" +e.currentTarget.id).prop("paused") == true) {
         $( "#audio" +e.currentTarget.id).trigger('play');
