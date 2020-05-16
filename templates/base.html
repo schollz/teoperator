@@ -285,24 +285,27 @@
                 <div class="pt1">
                     <p>generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
                     <br>
-                    <p>the following are generated for op-1 drums. you can click the waveform to download an .aif file to load onto the op-1.
-the varying colors indicate how the op-1 marks are generated.
+                    <p>click on a waveform to listen to it and download the op-1 drum patch. the varying colors indicate how the op-1 marks are generated.
                     </p>
                 </div>
+                 <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:2em;">
                 (( range .Metadata.Files))
                  
-                <div class="pt3">
-                <p><a href="((.Prefix)).aif" download>((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
+                <div class="pt1">
+                <p  style="display:none;" id="p((filebase .Prefix))">
+                  <a href="((.Prefix)).aif" download>((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
                 <p>
-                <a href="((.Prefix)).aif" download><img src="((.Prefix)).mp3.png"></a>
-                <br>
-                <audio controls>
+                <img src="((.Prefix)).mp3.png" class="waveform" id="((filebase .Prefix))">
+                </p>
+                <p  style="display:none;" id="a((filebase .Prefix))">
+                <audio controls id="audio((filebase .Prefix))">
                     <source src="/((.Prefix)).mp3" type="audio/mp3" />
                         Your browser does not support the audio tag.
                 </audio>
                 </p>
                 </div>
                 ((end))
+              </div>
 
                 ((else))
 
@@ -337,6 +340,26 @@ the varying colors indicate how the op-1 marks are generated.
             </div>
         </div>
 
+<script src="/static/js/jquery.min.js"></script>
+
+<script>
+  $(document).ready(function(){
+   $('.waveform').click(
+       function(e){
+        console.log(e.currentTarget.id);
+        $( "#p" +e.currentTarget.id).toggle();
+        $( "#a" +e.currentTarget.id).toggle();
+        console.log($( "#audio" +e.currentTarget.id).prop("paused"))
+        if ($( "#audio" +e.currentTarget.id).prop("paused") == true) {
+        $( "#audio" +e.currentTarget.id).trigger('play');
+        } else {
+        $( "#audio" +e.currentTarget.id).trigger('pause');
+        }
+       },
+   );
+});
+
+</script>
     </body>
     
 </html>
