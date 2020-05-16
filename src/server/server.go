@@ -217,8 +217,20 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	}
 	fname = path.Join(pathToData, path.Base(uparsed.Path))
 
-	log.Debugf("downloading to %s", fname)
-	err = download.Download(u, fname, 100000000)
+	fnameID := path.Join("data", fmt.Sprintf("%x%s", md5.Sum([]byte(u)), filepath.Ext(fname)))
+
+	_, errstat = os.Stat(fnameID)
+	if errstat != nil {
+		log.Debugf("downloading to %s", fnameID)
+		err = download.Download(u, fnameID, 100000000)
+		if err != nil {
+			return
+		}
+
+	}
+
+	// truncate a segment into the new folder
+	_, err = utils.CopyFile(fnameID, fname)
 	if err != nil {
 		return
 	}
@@ -230,16 +242,21 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	}
 
 	// no breaks, just get the first 11.75 seconds
+	log.Debug("generating full wav")
 	err = audiosegment.Truncate(fname, path.Join(pathToData, fnameShort+"-full.wav"), utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[0]+11.75))
 	if err != nil {
+		log.Debug(err)
 		return
 	}
+	log.Debug("generating drum patch")
 	err = op1.DrumPatch(path.Join(pathToData, fnameShort+"-full.wav"), path.Join(pathToData, fnameShort+"-full.aif"), op1.Default())
 	if err != nil {
+		log.Debug(err)
 		return
 	}
 	err = os.Remove(path.Join(pathToData, fnameShort+"-full.wav"))
 	if err != nil {
+		log.Debug(err)
 		return
 	}
 
