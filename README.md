@@ -1,6 +1,8 @@
 # teoperator
 
-I reverse-engineered [the OP-1 drum patch](https://github.com/schollz/teoperator/blob/master/src/op1/op1.go#L52-L129) so you can build your own drum patches from the OP-1. This repo is a server that you can chop up sounds from the internet for easy loading into the OP-1. This is an example of poetry being spliced up: [op1.schollz.com](https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=33.8&secondsEnd=97.5).
+I reverse-engineered [the OP-1 drum patch](https://github.com/schollz/teoperator/blob/master/src/op1/op1.go#L52-L129) so you can build your own drum patches from the OP-1. This repo is a server that you can chop up sounds from the internet for easy loading into the OP-1. 
+
+<strong>Examples:</strong> <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002">poetry from library of congress</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F6%2F68%2FTurdus_merula_male_song_at_dawn%252820s%2529.ogg&secondsStart=0&secondsEnd=30">black bird sounds</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F7%2F70%2FTimpani_64-c-p5.wav&secondsStart=0&secondsEnd=0">sounds from a timpani</a>.
 
 ## Install
 
