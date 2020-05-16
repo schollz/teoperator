@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -46,6 +49,13 @@ func GetStringInBetween(str string, start string, end string) (result string) {
 		return
 	}
 	return str[s : s+e]
+}
+
+// TempFileName generates a temporary filename for use in testing or whatever
+func TempFileName(prefix, suffix string) string {
+	randBytes := make([]byte, 4)
+	rand.Read(randBytes)
+	return filepath.Join(os.TempDir(), prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
 // ConvertToSeconds converts a string lik 00:00:11.35 into seconds (11.35)

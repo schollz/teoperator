@@ -30,23 +30,23 @@ func Default() OP1MetaData {
 
 // OP1MetaData is a list of custom fields sometimes set by OP-1
 type OP1MetaData struct {
-	DrumVersion int    `json:"drum_version"`
-	DynaEnv     []int  `json:"dyna_env"`
-	End         []int  `json:"end"`
-	FxActive    bool   `json:"fx_active"`
-	FxParams    []int  `json:"fx_params"`
-	FxType      string `json:"fx_type"`
-	LfoActive   bool   `json:"lfo_active"`
-	LfoParams   []int  `json:"lfo_params"`
-	LfoType     string `json:"lfo_type"`
-	Name        string `json:"name"`
-	Octave      int    `json:"octave"`
-	Pitch       []int  `json:"pitch"`
-	Playmode    []int  `json:"playmode"`
-	Reverse     []int  `json:"reverse"`
-	Start       []int  `json:"start"`
-	Type        string `json:"type"`
-	Volume      []int  `json:"volume"`
+	DrumVersion int     `json:"drum_version"`
+	DynaEnv     []int64 `json:"dyna_env"`
+	End         []int64 `json:"end"`
+	FxActive    bool    `json:"fx_active"`
+	FxParams    []int64 `json:"fx_params"`
+	FxType      string  `json:"fx_type"`
+	LfoActive   bool    `json:"lfo_active"`
+	LfoParams   []int64 `json:"lfo_params"`
+	LfoType     string  `json:"lfo_type"`
+	Name        string  `json:"name"`
+	Octave      int64   `json:"octave"`
+	Pitch       []int64 `json:"pitch"`
+	Playmode    []int64 `json:"playmode"`
+	Reverse     []int64 `json:"reverse"`
+	Start       []int64 `json:"start"`
+	Type        string  `json:"type"`
+	Volume      []int64 `json:"volume"`
 }
 
 // DrumPatch creates a drum patch from op1 meta data and a song clip
@@ -74,6 +74,14 @@ func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error)
 	if ssndTagPosition < 0 {
 		err = fmt.Errorf("no SND tag")
 		return
+	}
+
+	// normalize op1data, all the start/stop blocks need to be factors of 4096
+	for i := range op1data.End {
+		op1data.End[i] = op1data.End[i] * 4096 / 4096
+	}
+	for i := range op1data.Start {
+		op1data.Start[i] = op1data.Start[i] * 4096 / 4096
 	}
 
 	op1dataBytes, err := json.Marshal(op1data)

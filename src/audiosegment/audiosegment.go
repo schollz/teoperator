@@ -2,15 +2,20 @@ package audiosegment
 
 import (
 	"fmt"
+	"image"
+	_ "image/png"
 	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
 	"github.com/schollz/teoperator/src/waveform"
 )
@@ -23,6 +28,212 @@ type AudioSegment struct {
 }
 
 const SECONDSATEND = 0.1
+
+func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSegments [][]AudioSegment, err error) {
+	err = Convert(fname, fname+".mp3")
+	if err != nil {
+		return
+	}
+	fname = fname + ".mp3"
+
+	cmd := fmt.Sprintf("%s", fname)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffprobe", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Debugf("%s", out)
+		return
+	}
+	secondsDuration, err := utils.ConvertToSeconds(utils.GetStringInBetween(string(out), "Duration: ", ","))
+	if err != nil {
+		logger.Debugf("%s", out)
+		logger.Debug(err)
+		return
+	}
+	secondsStart, _ := strconv.ParseFloat(utils.GetStringInBetween(string(out), "start: ", ","), 64)
+
+	secondStart := []float64{}
+	for i := secondsStart; i < secondsDuration+secondsStart; i += secondsMax - secondsOverlap {
+		secondStart = append(secondStart, i)
+	}
+
+	numJobs := len(secondStart)
+	// step 2: specify the job and result
+	type job struct {
+		start float64
+	}
+	type result struct {
+		err error
+	}
+	jobs := make(chan job, numJobs)
+	results := make(chan result, numJobs)
+	runtime.GOMAXPROCS(runtime.NumCPU() * 2)
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go func(jobs <-chan job, results chan<- result) {
+			for j := range jobs {
+				// step 3: specify the work for the worker
+				var r result
+				folder, filenameonly := filepath.Split(fname)
+				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%04d.mp3", filenameonly[:2], int(j.start)))
+				fnameTruncOP1 := path.Join(folder, fmt.Sprintf("%s%04d.aif", filenameonly[:2], int(j.start)))
+				r.err = Truncate(fname, fnameTrunc, utils.SecondsToString(j.start), utils.SecondsToString(j.start+secondsMax))
+				if err != nil {
+					logger.Error(err)
+					results <- r
+					continue
+				}
+				var segments []AudioSegment
+				segments, _ = SplitOnSilence(fnameTrunc, -22, 0.2)
+				fmt.Printf("\nsegments: %+v", segments)
+				r.err = DrawSegments(segments)
+				if err != nil {
+					logger.Error(err)
+					results <- r
+					continue
+				}
+
+				// generate op-1 stuff
+				op1data := op1.Default()
+				for i, seg := range segments {
+					if i < len(op1data.End)-2 {
+						start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4096))
+						end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4096))
+						if start > end {
+							continue
+						}
+						if end > op1data.End[len(op1data.End)-1] {
+							continue
+						}
+						logger.Debug(seg.Start, start)
+						logger.Debug(seg.End, end)
+						op1data.Start[i] = start
+						op1data.End[i] = end
+					}
+				}
+				// write as op1 data
+				err = op1.DrumPatch(fnameTrunc, fnameTruncOP1, op1data)
+				if err != nil {
+					return
+				}
+				results <- r
+			}
+		}(jobs, results)
+	}
+
+	// step 4: send out jobs
+	for i := 0; i < numJobs; i++ {
+		jobs <- job{secondStart[i]}
+	}
+	close(jobs)
+
+	// step 5: do something with results
+	for i := 0; i < numJobs; i++ {
+		r := <-results
+		if r.err != nil {
+			logger.Error(err)
+		}
+	}
+
+	return
+}
+
+// DrawSegments will take a segment and draw it.
+// audiowaveform -i creeley-0.000-12.000.wav -o lifeb.png --background-color ffffff00 --waveform-color 000000 --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width 1200
+// convert -size 600x160 canvas:khaki  canvas_khaki.gif
+// convert -size 600x160 canvas:green  canvas_green.gif
+// convert canvas_khaki.gif canvas_green.gif +append canvas.gif
+// composite lifeb.png canvas.gif -compose Dst_In 3.png
+// convert 3.png -fuzz 1% -transparent black 4.png
+// eog 4.png
+func DrawSegments(segments []AudioSegment) (err error) {
+	wave := utils.TempFileName("wave", ".png")
+	// defer os.Remove(wave)
+	cmd := fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color 000000 --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
+		segments[0].Filename, wave, (segments[len(segments)-1].End-segments[0].Start)*100,
+	)
+	logger.Debug(cmd)
+	out, err := exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("audiowaveform: %s", out)
+	}
+
+	colors := []string{"khaki", "green"}
+	canvases := []string{}
+	for i := range segments {
+		canvasName := utils.TempFileName("canvas", ".png")
+		// defer os.Remove(canvasName)
+
+		canvases = append(canvases, canvasName)
+		cmd = fmt.Sprintf("-size %2.0fx160 canvas:%s %s",
+			segments[i].Duration*100, colors[int(math.Mod(float64(i), 2))], canvasName,
+		)
+		logger.Debug(cmd)
+		out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+		if err != nil {
+			logger.Errorf("audiowaveform: %s", out)
+		}
+	}
+
+	// merge canvases
+	finalCanvas := utils.TempFileName("final", ".png")
+	// defer os.Remove(finalCanvas)
+	cmd = fmt.Sprintf("%s +append %s",
+		strings.Join(canvases, " "), finalCanvas,
+	)
+	logger.Debug(cmd)
+	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("convert: %s", out)
+	}
+
+	// crop final canvas (not sure why this is nessecary)
+	width, height := getImageDimension(wave)
+	finalCanvasResized := utils.TempFileName("finalresize", ".png")
+	// defer os.Remove(finalCanvasResized)
+	cmd = fmt.Sprintf("%s -crop %dx%d+0+0 %s",
+		finalCanvas, width, height, finalCanvasResized,
+	)
+	logger.Debug(cmd)
+	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("convert: %s", out)
+	}
+
+	composite := utils.TempFileName("composite", ".png")
+	// defer os.Remove(composite)
+	cmd = fmt.Sprintf("%s %s -compose Dst_In %s",
+		wave, finalCanvasResized, composite,
+	)
+	logger.Debug(cmd)
+	out, err = exec.Command("composite", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("composite: %s", out)
+	}
+
+	final := segments[0].Filename + ".png"
+	cmd = fmt.Sprintf("%s -fuzz 1%% -transparent black %s",
+		composite, final,
+	)
+	logger.Debug(cmd)
+	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("convert: %s", out)
+	}
+
+	return
+}
+
+func getImageDimension(imagePath string) (int, int) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+	}
+
+	image, _, err := image.DecodeConfig(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", imagePath, err)
+	}
+	return image.Width, image.Height
+}
 
 // SplitOnSilence splits any audio file based on its silence
 func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) (segments []AudioSegment, err error) {
@@ -64,7 +275,9 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 				segment.End = seconds - 0.2
 				segment.Filename = fname
 				segment.Duration = segment.End - segment.Start
-				segments = append(segments, segment)
+				if segment.Duration > 0.25 {
+					segments = append(segments, segment)
+				}
 				segment.Start = seconds - 0.2
 			} else {
 				logger.Debug(err)
@@ -72,10 +285,15 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 		} else if strings.Contains(line, "time=") {
 			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "time=", " "))
 			if err == nil {
-				segment.End = seconds - 0.2
+				segment.End = seconds
 				segment.Duration = segment.End - segment.Start
 				segment.Filename = fname
-				segments = append(segments, segment)
+				if segment.Duration < 0.25 {
+					segments[len(segments)-1].End = seconds
+					segments[len(segments)-1].Duration = segments[len(segments)-1].End - segments[len(segments)-1].Start
+				} else {
+					segments = append(segments, segment)
+				}
 			} else {
 				logger.Debug(err)
 			}
@@ -230,13 +448,7 @@ func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, er
 
 // Truncate will truncate a file, while converting it to 44100
 func Truncate(fnameIn, fnameOut, from, to string) (err error) {
-	defer os.Remove("temp.wav")
-	err = Convert(fnameIn, "temp.wav")
-	if err != nil {
-		return
-	}
-
-	cmd := fmt.Sprintf("-y -i temp.wav -c copy -ss %s -to %s -ar 44100 %s", from, to, fnameOut)
+	cmd := fmt.Sprintf("-y -i %s -c copy -ss %s -to %s %s", fnameIn, from, to, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
@@ -247,8 +459,9 @@ func Truncate(fnameIn, fnameOut, from, to string) (err error) {
 	return
 }
 
+// Convert will convert a file to
 func Convert(fnameIn, fnameOut string) (err error) {
-	cmd := fmt.Sprintf("-y -i %s %s", fnameIn, fnameOut)
+	cmd := fmt.Sprintf("-y -i %s -ar 44100 %s", fnameIn, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)

@@ -52,3 +52,19 @@ func TestMerge(t *testing.T) {
 	assert.Nil(t, err)
 	fmt.Println(segment)
 }
+
+func TestSplitEqual(t *testing.T) {
+	segments, err := SplitEqual("tests/creeley.mp3", 11.5, 1)
+	assert.Nil(t, err)
+	fmt.Println(segments)
+}
+
+func Test111(t *testing.T) {
+	segs, err := SplitOnSilence("tests/creeley-0.025-11.525.mp3", -22, 0.2)
+	assert.Nil(t, err)
+	for _, segment := range segs {
+		fmt.Printf("segment: %+v\n", segment)
+	}
+	err = DrawSegments(segs)
+	assert.Nil(t, err)
+}
