@@ -22,7 +22,7 @@
       }
     
       .mw30 {
-          width: 80%;
+          box-sizing: border-box;
           max-width: 40em;
           margin: auto;
           border: 0 none;
@@ -42,7 +42,6 @@
       textarea,
       select {
           font-size: 1em;
-          padding: 2px 5px 4px;
       }
     
       /* flexbox styles */
@@ -76,6 +75,7 @@
           flex: none;
           width: auto;
           margin-left: 10em;
+          margin-right: -10em;
       }
     
       input[type="checkbox"]~label,
@@ -103,7 +103,7 @@
       }
     
       .button {
-          width: 8em;
+          max-width: 100%;
           padding: 0.5em;
       }
     
@@ -232,6 +232,11 @@
     img {
         max-width: 100%;
     }
+    input {
+  min-width: 60%;
+  max-width:4em;
+  overflow: hidden;
+    }
     </style>
     </head>
     
@@ -249,8 +254,8 @@
                     <label for="audioURL">url:</label>
                 </div>
                 <div>
-                    <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))">
-                    <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))">
+                    <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))" style="min-width: 30%;">
+                    <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))" style="min-width: 30%;">
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
                 <!-- <div>
@@ -258,7 +263,7 @@
                             <label for="removeSilence">checkbox</label>
                 </div> -->
                 <div>
-                    <button class="button" type="submit">chop it up!</button>
+                    <button class="button" type="submit" style="max-width:4em;  min-width: 60%;">chop it up!</button>
                     <label for="name"></label>
                 </div>
             </form>
