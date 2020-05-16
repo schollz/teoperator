@@ -72,7 +72,7 @@ func Download(u string, fname string, byteLimit int64) (alternativeName string, 
 }
 
 func Youtube(u string, fname string) (alternativeName string, err error) {
-	cmd := fmt.Sprintf("--extract-audio --audio-format mp3 %s",
+	cmd := fmt.Sprintf("--proxy socks5://127.0.0.1:9050 --extract-audio --audio-format mp3 %s",
 		u,
 	)
 	logger.Debug(cmd)
