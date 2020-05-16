@@ -246,7 +246,7 @@
                 <legend>
                     <pre style="float:right; text-align: right;">
 
-   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.1em;">op-1</strong></span></a>
+   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.1em;">op-1</strong></span></a>  v0.0.1alpha <small>(there may be bugs 🐛🐞🐜)</small>
                 </legend>
                 <form action="/patch" method="get">
                 <div>
@@ -281,9 +281,15 @@
                 (( end ))
 
    
+                       <p class="pt2">
+                      <strong>
+                        chop up internet sounds into drum patches for teenage engineering's op-1. 
+                      </strong>
+                    </p>
+
                 (( if .Metadata.UUID ))
                 <div class="pt1">
-                    <p>generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
+                    <p>the following samples generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
                     <br>
                     <p>click on a waveform to listen to it and download the op-1 drum patch. the varying colors indicate how the op-1 marks are generated.
                     </p>
@@ -293,7 +299,7 @@
                  
                 <div class="pt1">
                 <p  style="display:none;" id="p((filebase .Prefix))">
-                  <a href="((.Prefix)).aif" download>((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
+                  <a href="((.Prefix)).aif" download>download ((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
                 <p>
                 <img src="((.Prefix)).mp3.png" class="waveform" id="((filebase .Prefix))">
                 </p>
@@ -310,32 +316,29 @@
                 ((else))
 
                 <div>
-                    <p class="pt2">
-                        chop up an internet sound to load easily into the op-1 drum sounds. 
-                    </p>
                     <p class="pt1">
-                        the url you enter will be chopped up into 12 second samples, with markings put in where silence is detected.
+                        the url you enter will be chopped up into 12 second samples, with automatic key assignments based on waveform transients.
                     </p>
                     <p class="pt1">
                         to get started, enter a url from youtube or somewhere else on the web.
-                        if you need to upload something, <a href="https://share.schollz.com">use another website</a>  to upload first.
+                        if you need to upload something, <a target="_blank" href="https://share.schollz.com">use another website</a>  to upload first.
                     </p>
                     <p class="pt1">
 <strong>examples:</strong> <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002">poetry from library of congress</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F6%2F68%2FTurdus_merula_male_song_at_dawn%252820s%2529.ogg&secondsStart=0&secondsEnd=30">black bird sounds</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F7%2F70%2FTimpani_64-c-p5.wav&secondsStart=0&secondsEnd=0">sounds from a timpani</a>. <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=21.9&secondsEnd=60">spoken word from youtube.com</a>.
                     </p>
 
-                    <p class="pt1" style="text-transform: lowercase;">
-                        please note: <small>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
-                    </p>
+        
                 </div>
 
                 ((end))
-
+            <p class="pt2" style="text-transform: lowercase;">
+                        please note: <small>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
+                    </p>
 
                 (( end ))
                 (( define "footer" ))
                 <div class="pt3" style="text-align: right;">
-                    <small>Made <a href="https://github.com/schollz/teoperator">open-source by @schollz</a>.</small>
+                    <small>Made <a href="https://github.com/schollz/teoperator">open-source by @schollz</a> (c)2020.</small>
                 </div>
             </div>
         </div>
