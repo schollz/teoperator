@@ -1,6 +1,6 @@
 # teoperator
 
-I reverse-engineered [the OP-1 drum patch](https://github.com/schollz/teoperator/blob/master/src/op1/op1.go#L52-L129) so you can build your own drum patches from the OP-1. This repo is a server that you can chop up sounds from the internet for easy loading into the OP-1. Try it at https://op1.schollz.com.
+I reverse-engineered [the OP-1 drum patch](https://github.com/schollz/teoperator/blob/master/src/op1/op1.go#L52-L129) so you can build your own drum patches from the OP-1. This repo is a server that you can chop up sounds from the internet for easy loading into the OP-1. This is an example of poetry being spliced up: [op1.schollz.com](/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=33.8&secondsEnd=97.5).
 
 ## Install
 
