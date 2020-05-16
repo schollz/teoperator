@@ -218,7 +218,7 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	fname = path.Join(pathToData, path.Base(uparsed.Path))
 
 	log.Debugf("downloading to %s", fname)
-	err = download.Download(u, fname, 10000000)
+	err = download.Download(u, fname, 100000000)
 	if err != nil {
 		return
 	}

@@ -61,18 +61,18 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 		if strings.Contains(line, "silence_end") {
 			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
 			if err == nil {
-				segment.End = seconds
+				segment.End = seconds - 0.2
 				segment.Filename = fname
 				segment.Duration = segment.End - segment.Start
 				segments = append(segments, segment)
-				segment.Start = seconds
+				segment.Start = seconds - 0.2
 			} else {
 				logger.Debug(err)
 			}
 		} else if strings.Contains(line, "time=") {
 			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "time=", " "))
 			if err == nil {
-				segment.End = seconds
+				segment.End = seconds - 0.2
 				segment.Duration = segment.End - segment.Start
 				segment.Filename = fname
 				segments = append(segments, segment)

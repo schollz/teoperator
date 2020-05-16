@@ -37,7 +37,7 @@ func DrumpatchFromAudio(fnameAudio string, startStop []float64) (fnameShort stri
 
 	// generate splits based on silence
 	log.Debug("splitting on silence")
-	segments, err := audiosegment.SplitOnSilence(truncatedWav, -18, 0.05)
+	segments, err := audiosegment.SplitOnSilence(truncatedWav, -18, 0.2)
 	if err != nil {
 		log.Debug(err)
 		return
@@ -45,7 +45,7 @@ func DrumpatchFromAudio(fnameAudio string, startStop []float64) (fnameShort stri
 	log.Debugf("segments: %+v", segments)
 
 	// create the splits
-	splitSegments, err := audiosegment.Split(segments, path.Join(folder, fnameShort+"-split"), true)
+	splitSegments, err := audiosegment.Split(segments, path.Join(folder, fnameShort+"-split"), false)
 	if err != nil {
 		log.Debug(err)
 		return
@@ -61,17 +61,17 @@ func DrumpatchFromAudio(fnameAudio string, startStop []float64) (fnameShort stri
 	var allSegments [][]audiosegment.AudioSegment
 	for i, mergeSegment := range mergedSegments {
 		var mergedSegmentsSegments, splitMergedSegments []audiosegment.AudioSegment
-		mergedSegmentsSegments, err = audiosegment.SplitOnSilence(mergeSegment.Filename, -25, 0.01)
+		mergedSegmentsSegments, err = audiosegment.SplitOnSilence(mergeSegment.Filename, -18, 0.2)
 		if err != nil {
 			log.Debug(err)
-			return
+			continue
 		}
 
 		// generate splitmergeX-merge.png (remove everything else)
 		splitMergedSegments, err = audiosegment.Split(mergedSegmentsSegments, path.Join(folder, fmt.Sprintf("%s-%d", fnameShort, i)), false)
 		if err != nil {
 			log.Debug(err)
-			return
+			continue
 		}
 		for _, segment := range splitMergedSegments {
 			log.Debug(segment.Filename)
