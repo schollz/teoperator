@@ -5,6 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/schollz/logger"
 )
 
 // PassThru wraps an existing io.Reader.
@@ -34,7 +38,12 @@ func (pt *PassThru) Read(p []byte) (int, error) {
 
 // Download a file and limit the number of bytes. If the bytes exceed,
 // it will throw an error and delete the downloaded file.
-func Download(u string, fname string, byteLimit int64) (err error) {
+func Download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
+	// download youtube
+	if strings.Contains(u, "youtube") {
+		return Youtube(u, fname)
+	}
+
 	// Get the data
 	resp, err := http.Get(u)
 	if err != nil {
@@ -59,5 +68,33 @@ func Download(u string, fname string, byteLimit int64) (err error) {
 
 	_, err = io.Copy(out, src)
 
+	return
+}
+
+func Youtube(u string, fname string) (alternativeName string, err error) {
+	cmd := fmt.Sprintf("--extract-audio --audio-format mp3 %s",
+		u,
+	)
+	logger.Debug(cmd)
+	out, err := exec.Command("youtube-dl", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("youtube-dl: %s", out)
+		return
+	}
+	destFile := ""
+	for _, line := range strings.Split(string(out), "\n") {
+		if !strings.HasPrefix(line, "[ffmpeg] Destination") {
+			continue
+		}
+		foo := strings.TrimPrefix(line, "[ffmpeg] Destination:")
+		destFile = strings.TrimSpace(foo)
+		break
+	}
+	if destFile == "" {
+		err = fmt.Errorf("no dest file")
+		return
+	}
+	alternativeName = destFile
+	err = os.Rename(destFile, fname)
 	return
 }

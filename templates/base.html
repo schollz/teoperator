@@ -3,7 +3,7 @@
 
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>carp | nts-1 sequencer</title>
+        <title>chop-1 | sample maker</title>
         <style>
             /* some basic styling to make things pretty */
       *,
@@ -129,6 +129,11 @@
           padding-top: 3em;
       }
     
+    
+      .pt2{
+          padding-top: 2em;
+      }
+    
       .pt05 {
           padding-top: 0.5em;
       }
@@ -236,7 +241,7 @@
                 <legend>
                     <pre style="float:right; text-align: right;">
 
-   </pre><span style="font-size:1.5em">op</span>
+   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.1em;">op-1</strong></span></a>
                 </legend>
                 <form action="/patch" method="get">
                 <div>
@@ -244,41 +249,78 @@
                     <label for="audioURL">url:</label>
                 </div>
                 <div>
-                    <input type="number" id="secondsStart" name="secondsStart">
-                    <label for="secondsStart">start:</label>
+                    <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))">
+                    <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))">
+                    <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
-                <div>
-                    <input type="number" id="secondsEnd" name="secondsEnd" >
-                    <label for="secondsEnd">end:</label>
-                </div>
-                <div>
+                <!-- <div>
                             <input id="removeSilence" name="removeSilence" type="checkbox" />
                             <label for="removeSilence">checkbox</label>
-                </div>
+                </div> -->
                 <div>
-                    <button class="button" type="submit">Start</button>
-                    <label for="name">init:</label>
+                    <button class="button" type="submit">Chop it up</button>
+                    <label for="name"></label>
                 </div>
             </form>
             </fieldset>
-            <div class="mw30">                
-                <div>
-                    <p>
-                       ((.MessageError))
-                    </p>
-                    <p>
-                        op is ...
-                    </p>
-                    <p class="pt1">
-                        <strong>instructions:</strong>
-                    </p>
-                    <p class="pt05">
-                        first ... 
+            <div class="mw30">
+                (( with .MessageError ))
+                <div style="text-align: center;">
+                    <p  class="error">
+                        ((.))
                     </p>
                 </div>
                 (( end ))
+
+   
+                (( if .Metadata.UUID ))
+                <div class="pt1">
+                    <p>generated from '<a href="$.Metadata.OriginalURL">((urlbase $.Metadata.Name ))</a>'</p>
+                    <br>
+                    <p>the following are generated for op-1 drums. you can click the waveform to download an .aif file to load onto the op-1.
+the varying colors indicate how the op-1 marks are generated.
+                    </p>
+                </div>
+                (( range .Metadata.Files))
+                 
+                <div class="pt3">
+                <p><a href="((.Prefix)).aif" download>((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
+                <p>
+                <a href="((.Prefix)).aif" download><img src="((.Prefix)).mp3.png"></a>
+                <br>
+                <audio controls>
+                    <source src="/((.Prefix)).mp3" type="audio/mp3" />
+                        Your browser does not support the audio tag.
+                </audio>
+                </p>
+                </div>
+                ((end))
+
+                ((else))
+
+                <div>
+                    <p class="pt2">
+                        chop up an internet sound to load easily into the op-1 drum sounds. 
+                    </p>
+                    <p class="pt1">
+                        the url you enter will be chopped up into 12 second samples, with markings put in where silence is detected.
+                    </p>
+                    <p class="pt1">
+                        to get started, enter a url from youtube or somewhere else on the web.
+                        if you need to upload something, <a href="https://share.schollz.com">use another website</a>  to upload first.
+                    </p>
+
+                    <p class="pt1" style="text-transform: lowercase;">
+                        please note: <small>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
+                    </p>
+                </div>
+
+                ((end))
+
+
+                (( end ))
                 (( define "footer" ))
-                <div class="pt1" style="text-align: right;">
+                <div class="pt3" style="text-align: right;">
                     <small>Made by <a href="https://github.com/schollz/teoperator">@schollz</a> under MIT.</small>
                 </div>
             </div>

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,13 +21,12 @@ import (
 	"github.com/schollz/httpfileserver"
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/audiosegment"
-	"github.com/schollz/teoperator/src/build"
 	"github.com/schollz/teoperator/src/download"
-	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
 )
 
 func Run(port int) (err error) {
+	os.Mkdir("data", os.ModePerm)
 	loadTemplates()
 	log.Infof("listening on :%d", port)
 	http.HandleFunc("/static/", httpfileserver.New("/static/", "static/", httpfileserver.OptionNoCache(true)).Handle())
@@ -55,9 +55,16 @@ type Href struct {
 type Metadata struct {
 	Name        string
 	UUID        string
-	Segments    []int
 	OriginalURL string
-	StartStop   []float64
+	Files       []FileData
+	Start       float64
+	Stop        float64
+}
+
+type FileData struct {
+	Prefix string
+	Start  float64
+	Stop   float64
 }
 
 type Render struct {
@@ -103,6 +110,13 @@ func loadTemplates() {
 		"urlbase": func(s string) string {
 			uparsed, _ := url.Parse(s)
 			return filepath.Base(uparsed.Path)
+		},
+		"filebase": func(s string) string {
+			_, base := filepath.Split(s)
+			return base
+		},
+		"roundfloat": func(f float64) string {
+			return fmt.Sprintf("%2.1f", f)
 		},
 	}
 	for _, templateName := range []string{"main"} {
@@ -194,6 +208,9 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 
 func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	log.Debug(u, startStop)
+	if startStop[1]-startStop[0] < 12 {
+		startStop[1] = startStop[0] + 60
+	}
 
 	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
 
@@ -210,67 +227,72 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 	if err != nil {
 		return
 	}
+
+	// find filename of downloaded file
 	fname := ""
 	uparsed, err := url.Parse(u)
 	if err != nil {
 		return
 	}
 	fname = path.Join(pathToData, path.Base(uparsed.Path))
+	if !strings.Contains(fname, ".") {
+		fname += ".mp3"
+	}
 
 	fnameID := path.Join("data", fmt.Sprintf("%x%s", md5.Sum([]byte(u)), filepath.Ext(fname)))
 
 	_, errstat = os.Stat(fnameID)
+	var alternativeName string
 	if errstat != nil {
 		log.Debugf("downloading to %s", fnameID)
-		err = download.Download(u, fnameID, 100000000)
+		alternativeName, err = download.Download(u, fnameID, 100000000)
 		if err != nil {
 			return
 		}
 
 	}
 
-	// truncate a segment into the new folder
-	_, err = utils.CopyFile(fnameID, fname)
+	// // copy file into folder
+	// _, err = utils.CopyFile(fnameID, fname)
+	// if err != nil {
+	// 	return
+	// }
+	// truncate into folder
+	err = audiosegment.Truncate(fnameID, fname, utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[1]))
 	if err != nil {
 		return
 	}
 
-	// build the drum patch
-	fnameShort, numSegments, err := build.DrumpatchFromAudio(fname, startStop)
+	// generate segments
+	segments, err := audiosegment.SplitEqual(fname, 11.5, 1)
 	if err != nil {
-		return
-	}
-
-	// no breaks, just get the first 11.75 seconds
-	log.Debug("generating full wav")
-	err = audiosegment.Truncate(fname, path.Join(pathToData, fnameShort+"-full.wav"), utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[0]+11.75))
-	if err != nil {
-		log.Debug(err)
-		return
-	}
-	log.Debug("generating drum patch")
-	err = op1.DrumPatch(path.Join(pathToData, fnameShort+"-full.wav"), path.Join(pathToData, fnameShort+"-full.aif"), op1.Default())
-	if err != nil {
-		log.Debug(err)
-		return
-	}
-	err = os.Remove(path.Join(pathToData, fnameShort+"-full.wav"))
-	if err != nil {
-		log.Debug(err)
 		return
 	}
 
 	// write metadata
-	segnums := []int{}
-	for i := 0; i < numSegments; i++ {
-		segnums = append(segnums, i)
+	files := make([]FileData, len(segments))
+	for i, seg := range segments {
+		files[i] = FileData{
+			Prefix: seg[0].Filename[:len(seg[0].Filename)-4],
+			Start:  seg[0].StartAbs + startStop[0],
+			Stop:   seg[0].EndAbs + startStop[0],
+		}
+	}
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Start < files[j].Start
+	})
+
+	log.Debug(alternativeName)
+	if alternativeName != "" {
+		fname = alternativeName
 	}
 	b, _ := json.Marshal(Metadata{
-		Name:        fnameShort,
+		Name:        fname,
 		UUID:        uuid,
-		Segments:    segnums,
 		OriginalURL: u,
-		StartStop:   startStop,
+		Files:       files,
+		Start:       startStop[0],
+		Stop:        startStop[1],
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
