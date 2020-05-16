@@ -41,19 +41,30 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 	var segment AudioSegment
 	segment.Start = 0
 	for _, line := range strings.Split(string(out), "\n") {
-		if strings.Contains(line, "silence_start") {
-			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line+" ", "silence_start: ", " "))
+		// if strings.Contains(line, "silence_start") {
+		// 	seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line+" ", "silence_start: ", " "))
+		// 	if err == nil {
+		// 		segment.End = seconds
+		// 		segment.Filename = fname
+		// 		segment.Duration = segment.End - segment.Start
+		// 		segments = append(segments, segment)
+		// 	} else {
+		// 		logger.Debug(err)
+		// 	}
+		// } else if strings.Contains(line, "silence_end") {
+		// 	seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
+		// 	if err == nil {
+		// 		segment.Start = seconds
+		// 	} else {
+		// 		logger.Debug(err)
+		// 	}
+		if strings.Contains(line, "silence_end") {
+			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
 			if err == nil {
 				segment.End = seconds
 				segment.Filename = fname
 				segment.Duration = segment.End - segment.Start
 				segments = append(segments, segment)
-			} else {
-				logger.Debug(err)
-			}
-		} else if strings.Contains(line, "silence_end") {
-			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
-			if err == nil {
 				segment.Start = seconds
 			} else {
 				logger.Debug(err)

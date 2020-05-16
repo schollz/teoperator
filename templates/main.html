@@ -2,6 +2,7 @@
 (( with .MessageError ))
 ((.))
 (( end ))
+(( if .Metadata.UUID ))
 <div class="pt1">
     <p>generated from '<a href="$.Metadata.OriginalURL">((urlbase $.Metadata.OriginalURL ))</a>'</p>
     <img src="/data/(($.Metadata.UUID))/(($.Metadata.Name))-split-merge.png" width=100%> 
@@ -27,6 +28,7 @@
 </audio>
 </p>
 </div>
+((end))
 ((end))
 
 ((template "footer" .))
