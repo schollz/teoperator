@@ -76,12 +76,12 @@ func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error)
 		return
 	}
 
-	// normalize op1data, all the start/stop blocks need to be factors of 4096
+	// normalize op1data, all the start/stop blocks need to be factors of 8192
 	for i := range op1data.End {
-		op1data.End[i] = op1data.End[i] * 4096 / 4096
+		op1data.End[i] = op1data.End[i] * 8192 / 8192
 	}
 	for i := range op1data.Start {
-		op1data.Start[i] = op1data.Start[i] * 4096 / 4096
+		op1data.Start[i] = op1data.Start[i] * 8192 / 8192
 	}
 
 	op1dataBytes, err := json.Marshal(op1data)
