@@ -11,7 +11,10 @@ I reverse-engineered the OP-1 drum patch so you can build your own drum patches 
 
 ## Install
 
-You can also install and run yourself:
+
+First install the pre-requisite programs. Instructions for both Windows and Linux.
+
+#### Linux
 
 ```
 $ sudo apt install imagemagick ffmpeg 
@@ -30,6 +33,17 @@ unzip audiowaveform-mingw64.zip
 mv audiowaveform to path
 scoop install ffmpeg imagemagick youtube-dl
 ```
+
+### Build and run
+
+```
+$ go build 
+$ ./teoperator --serve --debug
+[info]	2020/05/17 13:33:58 listening on :8053
+```
+
+Then open a browser to `localhost:8053`!
+
 
 # License
 
