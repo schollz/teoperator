@@ -155,7 +155,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 		return
 	}
 	wave := utils.TempFileName("wave", ".png")
-	// defer os.Remove(wave)
+	defer os.Remove(wave)
 	cmd := fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color 000000 --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
 		segments[0].Filename, wave, (segments[len(segments)-1].End-segments[0].Start)*100,
 	)
@@ -169,7 +169,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 	canvases := []string{}
 	for i := range segments {
 		canvasName := utils.TempFileName("canvas", ".png")
-		// defer os.Remove(canvasName)
+		defer os.Remove(canvasName)
 
 		canvases = append(canvases, canvasName)
 		cmd = fmt.Sprintf("-size %2.0fx160 canvas:%s %s",
@@ -184,7 +184,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 
 	// merge canvases
 	finalCanvas := utils.TempFileName("final", ".png")
-	// defer os.Remove(finalCanvas)
+	defer os.Remove(finalCanvas)
 	cmd = fmt.Sprintf("%s +append %s",
 		strings.Join(canvases, " "), finalCanvas,
 	)
@@ -197,7 +197,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 	// crop final canvas (not sure why this is nessecary)
 	width, height := getImageDimension(wave)
 	finalCanvasResized := utils.TempFileName("finalresize", ".png")
-	// defer os.Remove(finalCanvasResized)
+	defer os.Remove(finalCanvasResized)
 	cmd = fmt.Sprintf("%s -crop %dx%d+0+0 %s",
 		finalCanvas, width, height, finalCanvasResized,
 	)
@@ -208,7 +208,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 	}
 
 	composite := utils.TempFileName("composite", ".png")
-	// defer os.Remove(composite)
+	defer os.Remove(composite)
 	cmd = fmt.Sprintf("%s %s -compose Dst_In %s",
 		wave, finalCanvasResized, composite,
 	)
@@ -422,7 +422,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 // 		err = fmt.Errorf("must have wav")
 // 		return
 // 	}
-// 	// defer os.Remove(f.Name())
+// 	defer os.Remove(f.Name())
 
 // 	for _, fname := range fnames {
 // 		fname, err = filepath.Abs(fname)
