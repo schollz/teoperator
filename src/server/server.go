@@ -252,19 +252,24 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 
 	}
 
+	folder0, _ := filepath.Split(fname)
+	shortName := fmt.Sprintf("%x%s", md5.Sum([]byte(u+fmt.Sprintf("%+v", startStop))), filepath.Ext(fname))
+	shortName = shortName[:6]
+	shortName = path.Join(folder0, shortName+filepath.Ext(fname))
+
 	// // copy file into folder
 	// _, err = utils.CopyFile(fnameID, fname)
 	// if err != nil {
 	// 	return
 	// }
 	// truncate into folder
-	err = audiosegment.Truncate(fnameID, fname, utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[1]))
+	err = audiosegment.Truncate(fnameID, shortName, utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[1]))
 	if err != nil {
 		return
 	}
 
 	// generate segments
-	segments, err := audiosegment.SplitEqual(fname, 11.5, 1)
+	segments, err := audiosegment.SplitEqual(shortName, 11.5, 1)
 	if err != nil {
 		return
 	}

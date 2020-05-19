@@ -55,8 +55,8 @@ func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error)
 		err = fmt.Errorf("%s does not have .aif", fnameOut)
 		return
 	}
-	// generate a merged audio waveform
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100 %s", fnameIn, fnameOut)
+	// generate a merged audio waveform, downsampled to 1 channel
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100  -ac 1 %s", fnameIn, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {

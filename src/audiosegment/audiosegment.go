@@ -74,8 +74,8 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 				// step 3: specify the work for the worker
 				var r result
 				folder, filenameonly := filepath.Split(fname)
-				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%04d.mp3", filenameonly[:2], int(j.start)))
-				fnameTruncOP1 := path.Join(folder, fmt.Sprintf("%s%04d.aif", filenameonly[:2], int(j.start)))
+				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%03d.mp3", filenameonly[:3], int(j.start)))
+				fnameTruncOP1 := path.Join(folder, fmt.Sprintf("%s%03d.aif", filenameonly[:3], int(j.start)))
 				r.err = Truncate(fname, fnameTrunc, utils.SecondsToString(j.start), utils.SecondsToString(j.start+secondsMax))
 				if err != nil {
 					logger.Error(err)
