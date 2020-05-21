@@ -8,63 +8,73 @@ import (
 )
 
 func TestDrumPatch(t *testing.T) {
-	assert.Nil(t, DrumPatch("tests/1.aif", "drum.aif", Default()))
+	dp := NewDrumPatch()
+	assert.Nil(t, dp.Save("tests/1.aif", "drum.aif"))
 }
 
 func TestReadSynth(t *testing.T) {
-	sp, err := ReadSynthPatch("reverse/engines/cluster_min.aif")
+	sp, err := ReadSynthPatch("reverse/lfo/tremelo/minspeed_-100_-100_minslope_env0.aif")
 	assert.Nil(t, err)
-	fmt.Println(sp.Knobs)
-	sp, err = ReadSynthPatch("reverse/engines/cluster_max.aif")
+	fmt.Printf("\n%+v\n", sp.LfoParams)
+	sp, err = ReadSynthPatch("reverse/lfo/tremelo/maxspeed_100_100_maxslope_env1.aif")
 	assert.Nil(t, err)
-	fmt.Println(sp.Knobs)
+	fmt.Printf("\n%+v\n", sp.LfoParams)
 
-	sp, err = ReadSynthPatch("reverse/engines/dna_min.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Knobs)
-	sp, err = ReadSynthPatch("reverse/engines/dna_max.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Knobs)
+	// sp, err = ReadSynthPatch("reverse/engines/cluster_max.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Knobs)
 
-	sp, err = ReadSynthPatch("reverse/portamendo/portamendo_off.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
-	sp, err = ReadSynthPatch("reverse/portamendo/portamendo1.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
-	sp, err = ReadSynthPatch("reverse/portamendo/portamendo_127.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
+	// ioutil.WriteFile("default.aif", defaultSynthAif, 0644)
+	// sp, err = ReadSynthPatch("reverse/engines/cluster0.aif")
+	// assert.Nil(t, err)
+	// sp.Knobs[0] = 6999
+	// sp.Adsr[0] = 5003
+	// sp.Adsr[1] = 5003
+	// sp.Adsr[2] = 5003
+	// sp.Adsr[3] = 5003
+	// assert.Nil(t, sp.Save("default3.aif"))
 
-	sp, err = ReadSynthPatch("reverse/adsr/adsr_0.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
-	sp, err = ReadSynthPatch("reverse/adsr/adsr_1.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
-	sp, err = ReadSynthPatch("reverse/adsr/adsr_max.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr)
+	// b, _ := ioutil.ReadFile("reverse/engines/cluster0.aif")
+	// b64 := base64.StdEncoding.EncodeToString(b)
+	// ioutil.WriteFile("out.base64", []byte(b64), 0644)
 
-	sp, err = ReadSynthPatch("reverse/playmode/playmode_0_poly.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr[Playmode])
-	sp, err = ReadSynthPatch("reverse/playmode/playmode_1_mono.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr[Playmode])
-	sp, err = ReadSynthPatch("reverse/playmode/playmode_3_unison.aif")
-	assert.Nil(t, err)
-	fmt.Println(sp.Adsr[Playmode])
+	// sp, err = ReadSynthPatch("reverse/engines/drwave_min.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Knobs)
+	// sp, err = ReadSynthPatch("reverse/engines/drwave_max.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Knobs)
 
-	fmt.Println(sp)
+	// sp, err = ReadSynthPatch("reverse/portamendo/portamendo_off.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+	// sp, err = ReadSynthPatch("reverse/portamendo/portamendo1.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+	// sp, err = ReadSynthPatch("reverse/portamendo/portamendo_127.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+
+	// sp, err = ReadSynthPatch("reverse/adsr/adsr_0.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+	// sp, err = ReadSynthPatch("reverse/adsr/adsr_1.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+	// sp, err = ReadSynthPatch("reverse/adsr/adsr_max.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr)
+
+	// sp, err = ReadSynthPatch("reverse/playmode/playmode_0_poly.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr[Playmode])
+	// sp, err = ReadSynthPatch("reverse/playmode/playmode_1_mono.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr[Playmode])
+	// sp, err = ReadSynthPatch("reverse/playmode/playmode_3_unison.aif")
+	// assert.Nil(t, err)
+	// fmt.Println(sp.Adsr[Playmode])
+
+	// fmt.Println(sp)
+	// fmt.Println(AllowedAttack)
 }
-
-// ADSR parameters
-const (
-	Attack = iota
-	Decay
-	Sustain
-	Release
-	Playmode
-	Portamendo
-)

@@ -18,6 +18,14 @@ import (
 	"github.com/schollz/teoperator/src/utils"
 )
 
+var imagemagickconvert = "convert"
+
+func init() {
+	if runtime.GOOS == "windows" {
+		imagemagickconvert = "imconvert"
+	}
+}
+
 type AudioSegment struct {
 	Filename string
 	Start    float64
@@ -92,7 +100,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 				}
 
 				// generate op-1 stuff
-				op1data := op1.Default()
+				op1data := op1.NewDrumPatch()
 				for i, seg := range r.segments {
 					r.segments[i].StartAbs = j.start
 					r.segments[i].EndAbs = j.start + secondsMax
@@ -113,7 +121,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 				}
 
 				// write as op1 data
-				err = op1.DrumPatch(fnameTrunc, fnameTruncOP1, op1data)
+				err = op1data.Save(fnameTrunc, fnameTruncOP1)
 				if err != nil {
 					return
 				}
@@ -176,7 +184,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 			segments[i].Duration*100, colors[int(math.Mod(float64(i), 2))], canvasName,
 		)
 		logger.Debug(cmd)
-		out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+		out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
 		if err != nil {
 			logger.Errorf("audiowaveform: %s", out)
 		}
@@ -189,7 +197,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 		strings.Join(canvases, " "), finalCanvas,
 	)
 	logger.Debug(cmd)
-	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
@@ -202,7 +210,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 		finalCanvas, width, height, finalCanvasResized,
 	)
 	logger.Debug(cmd)
-	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
@@ -223,7 +231,7 @@ func DrawSegments(segments []AudioSegment) (err error) {
 		composite, final,
 	)
 	logger.Debug(cmd)
-	out, err = exec.Command("convert", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
@@ -370,7 +378,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 // 	// generate a merged audio waveform image
 // 	cmd := fmt.Sprintf("%s +append %s-merge.png", strings.Join(allfnames, " "), fnamePrefix)
 // 	logger.Debug(cmd)
-// 	cmd0 := "convert"
+// 	cmd0 := imagemagickconvert
 // 	if runtime.GOOS == "windows" {
 // 		cmd0 = "imconvert"
 // 	}
