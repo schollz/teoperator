@@ -49,6 +49,50 @@ type OP1MetaData struct {
 	Volume      []int64 `json:"volume"`
 }
 
+type SynthPatch struct {
+	Adsr [8]int `json:"adsr"`
+	// Attack [64, 16320],, increments of 512
+	// Decay [64, 16320], increments of 512
+	// Sustain [0, 32767], increments of 512
+	// Release [64, 16320], increments of 512
+	// Playmode values 2048, 5120, 14336 (poly, mono, unison)
+	// Portamendo 64 = off, value of [192, 6140] correspond to Portamendo [1,127]
+	FxActive     bool   `json:"fx_active"`
+	FxParams     [8]int `json:"fx_params"`
+	FxType       string `json:"fx_type"`
+	Knobs        [8]int `json:"knobs"`
+	LfoActive    bool   `json:"lfo_active"`
+	LfoParams    [8]int `json:"lfo_params"`
+	LfoType      string `json:"lfo_type"`
+	Name         string `json:"name"`
+	Octave       int    `json:"octave"`
+	SynthVersion int    `json:"synth_version"`
+	Type         string `json:"type"`
+}
+
+func ReadSynthPatch(fname string) (sp SynthPatch, err error) {
+	b, err := ioutil.ReadFile(fname)
+	if err != nil {
+		return
+	}
+
+	index1 := bytes.Index(b, []byte("op-1"))
+	if index1 < 0 {
+		err = fmt.Errorf("could not find header in '%s'", fname)
+		return
+	}
+	index2 := bytes.Index(b[index1:], []byte("}"))
+	if index2 < 0 {
+		err = fmt.Errorf("could not find JSON end in '%s'", fname)
+		return
+	}
+
+	err = json.Unmarshal(b[index1+4:index2+index1+1], &sp)
+
+	return
+
+}
+
 // DrumPatch creates a drum patch from op1 meta data and a song clip
 func DrumPatch(fnameIn string, fnameOut string, op1data OP1MetaData) (err error) {
 	if !strings.HasSuffix(fnameOut, ".aif") {
