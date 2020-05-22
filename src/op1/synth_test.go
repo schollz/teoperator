@@ -8,5 +8,5 @@ import (
 
 func TestBuildSynth(t *testing.T) {
 	sp := NewSynthPatch()
-	assert.Nil(t, sp.Build("Piano.mf.D3.aiff", true))
+	assert.Nil(t, sp.SaveSample("Piano.mf.D3.aiff", "mfd3.aif", true))
 }

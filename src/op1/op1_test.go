@@ -21,7 +21,7 @@ func TestRandom(t *testing.T) {
 		sp := RandomSynthPatch(42 + int64(i))
 		fmt.Printf("%+v\n", sp)
 
-		err := sp.Save(fmt.Sprintf("%s.aif", sp.Name))
+		err := sp.SaveSynth(fmt.Sprintf("%s.aif", sp.Name))
 		assert.Nil(t, err)
 	}
 }

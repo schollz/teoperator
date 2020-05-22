@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -333,7 +334,7 @@ func ReadSynthPatch(fname string) (sp SynthPatch, err error) {
 }
 
 // Build a synth patch from a file
-func (s *SynthPatch) Build(fname string, trimSilence bool) (err error) {
+func (s SynthPatch) SaveSample(fname string, fnameout string, trimSilence bool) (err error) {
 	startClip := 0.0
 	if trimSilence {
 		var silenceSegments []models.AudioSegment
@@ -345,8 +346,10 @@ func (s *SynthPatch) Build(fname string, trimSilence bool) (err error) {
 		startClip = silenceSegments[0].End
 	}
 
-	// generate a merged audio waveform, downsampled to 1 channel
-	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.5, fname+".aif")
+	// generate a truncated, merged audio waveform, downsampled to 1 channel
+	fnameDownsampled := fname + ".down.aif"
+	// defer os.Remove(fnameDownsampled)
+	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.5, fnameDownsampled)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
@@ -354,10 +357,19 @@ func (s *SynthPatch) Build(fname string, trimSilence bool) (err error) {
 		return
 	}
 
+	// normalize
+	fnameNormalized := fname + ".norm.aif"
+	defer os.Remove(fnameNormalized)
+	err = ffmpeg.Normalize(fnameDownsampled, fnameNormalized)
+	if err != nil {
+		return
+	}
+
+	err = s.SaveSynth(fnameout, fnameNormalized)
 	return
 }
 
-func (s SynthPatch) Save(fnameOut string) (err error) {
+func (s SynthPatch) SaveSynth(fnameOut string, fnamein ...string) (err error) {
 	if !strings.HasSuffix(fnameOut, ".aif") {
 		err = fmt.Errorf("%s does not have .aif", fnameOut)
 		return
@@ -369,18 +381,27 @@ func (s SynthPatch) Save(fnameOut string) (err error) {
 	}
 
 	// clip out the current data
-	b := append([]byte{}, defaultSynthAif...)
-	index1 := bytes.Index(b, []byte("APPL"))
-	if index1 < 0 {
-		err = fmt.Errorf("could not find header ")
-		return
+	var b []byte
+	if len(fnamein) > 0 {
+		b, err = ioutil.ReadFile(fnamein[0])
+		if err != nil {
+			return
+		}
+	} else {
+		// use the default robot op-1 patch
+		b = append([]byte{}, defaultSynthAif...)
+		index1 := bytes.Index(b, []byte("APPL"))
+		if index1 < 0 {
+			err = fmt.Errorf("could not find header ")
+			return
+		}
+		index2 := bytes.Index(b, []byte("SSND"))
+		if index2 < 0 {
+			err = fmt.Errorf("could not find JSON end")
+			return
+		}
+		b = append(b[:index1], b[index2:]...)
 	}
-	index2 := bytes.Index(b, []byte("SSND"))
-	if index2 < 0 {
-		err = fmt.Errorf("could not find JSON end")
-		return
-	}
-	b = append(b[:index1], b[index2:]...)
 
 	ssndTagPosition := bytes.Index(b, []byte("SSND"))
 	if ssndTagPosition < 0 {

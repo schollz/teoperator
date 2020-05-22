@@ -44,7 +44,7 @@ func Normalize(fname string, fnameout string) (err error) {
 	}
 
 	logger.Debugf("n: %+v", n)
-	cmd = fmt.Sprintf("-i %s -af loudnorm=I=-23:LRA=7:tp=-2:measured_I=%s:measured_LRA=%s:measured_tp=%s:measured_thresh=%s:offset=-0.47 -y %s",
+	cmd = fmt.Sprintf("-i %s -ar 44100 -af loudnorm=I=-23:LRA=7:tp=-2:measured_I=%s:measured_LRA=%s:measured_tp=%s:measured_thresh=%s:offset=-0.47 -y %s",
 		fname,
 		n.InputI,
 		n.InputLra,
