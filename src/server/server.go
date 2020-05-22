@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"sort"
@@ -19,9 +20,12 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/schollz/httpfileserver"
+	"github.com/schollz/logger"
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/audiosegment"
 	"github.com/schollz/teoperator/src/download"
+	"github.com/schollz/teoperator/src/models"
+	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
 )
 
@@ -53,12 +57,13 @@ type Href struct {
 }
 
 type Metadata struct {
-	Name        string
-	UUID        string
-	OriginalURL string
-	Files       []FileData
-	Start       float64
-	Stop        float64
+	Name         string
+	UUID         string
+	OriginalURL  string
+	Files        []FileData
+	Start        float64
+	Stop         float64
+	IsSynthPatch bool
 }
 
 type FileData struct {
@@ -101,6 +106,9 @@ func loadTemplates() {
 		"removeSlashes": func(s string) string {
 			return strings.TrimPrefix(strings.TrimSpace(strings.Replace(s, "/", "-", -1)), "-location-")
 		},
+		"removeDots": func(s string) string {
+			return strings.TrimSpace(strings.Replace(s, ".", "", -1))
+		},
 		"minusOne": func(s int) int {
 			return s - 1
 		},
@@ -113,6 +121,7 @@ func loadTemplates() {
 		},
 		"filebase": func(s string) string {
 			_, base := filepath.Split(s)
+			base = strings.Replace(base, ".", "", -1)
 			return base
 		},
 		"roundfloat": func(f float64) string {
@@ -162,6 +171,11 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	audioURL, _ := r.URL.Query()["audioURL"]
 	secondsStart, _ := r.URL.Query()["secondsStart"]
 	secondsEnd, _ := r.URL.Query()["secondsEnd"]
+	patchtypeA, _ := r.URL.Query()["synthPatch"]
+	patchtype := "drum"
+	if len(patchtypeA) > 0 && patchtypeA[0] == "on" {
+		patchtype = "synth"
+	}
 
 	if len(audioURL[0]) == 0 {
 		err = fmt.Errorf("no URL")
@@ -176,7 +190,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
 
-	uuid, err := generateUserData(audioURL[0], startStop)
+	uuid, err := generateUserData(audioURL[0], startStop, patchtype)
 	if err != nil {
 		return
 	}
@@ -206,10 +220,13 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-func generateUserData(u string, startStop []float64) (uuid string, err error) {
+func generateUserData(u string, startStop []float64, patchType string) (uuid string, err error) {
 	log.Debug(u, startStop)
 	if startStop[1]-startStop[0] < 12 {
 		startStop[1] = startStop[0] + 60
+	}
+	if patchType != "drum" {
+		startStop[1] = startStop[0] + 5.75
 	}
 
 	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
@@ -268,10 +285,18 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 		return
 	}
 
-	// generate segments
-	segments, err := audiosegment.SplitEqual(shortName, 11.5, 1)
-	if err != nil {
-		return
+	// generate patches
+	var segments [][]models.AudioSegment
+	if patchType == "drum" {
+		segments, err = audiosegment.SplitEqual(shortName, 11.5, 1)
+		if err != nil {
+			return
+		}
+	} else {
+		segments, err = makeSynthPatch(shortName)
+		if err != nil {
+			return
+		}
 	}
 
 	// write metadata
@@ -292,14 +317,58 @@ func generateUserData(u string, startStop []float64) (uuid string, err error) {
 		fname = alternativeName
 	}
 	b, _ := json.Marshal(Metadata{
-		Name:        fname,
-		UUID:        uuid,
-		OriginalURL: u,
-		Files:       files,
-		Start:       startStop[0],
-		Stop:        startStop[1],
+		Name:         fname,
+		UUID:         uuid,
+		OriginalURL:  u,
+		Files:        files,
+		Start:        startStop[0],
+		Stop:         startStop[1],
+		IsSynthPatch: patchType == "synth",
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
+
+	return
+}
+
+func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) {
+	sp := op1.NewSynthSamplePatch()
+	basefolder, basefname := filepath.Split(fname)
+	sp.Name = strings.Split(basefname, ".")[0]
+	fnameout := path.Join(basefolder, strings.Split(basefname, ".")[0]+".aif")
+
+	err = sp.SaveSample(fname, fnameout, true)
+	if err != nil {
+		return
+	}
+	segments = [][]models.AudioSegment{
+		[]models.AudioSegment{
+			models.AudioSegment{
+				Filename: fnameout,
+				StartAbs: 0,
+				EndAbs:   5.75,
+			},
+		},
+	}
+
+	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".mp3")
+	cmd := fmt.Sprintf("-y -i %s %s", fnameout, fnamewav)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	logger.Debugf("ffmpeg: %s", out)
+	if err != nil {
+		err = fmt.Errorf("ffmpeg; %s", err.Error())
+		return
+	}
+
+	waveformfname := fnamewav + ".png"
+	cmd = fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color ffffff --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
+		fnamewav, waveformfname, 5.75*100,
+	)
+	logger.Debug(cmd)
+	out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("audiowaveform: %s", out)
+	}
 
 	return
 }

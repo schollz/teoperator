@@ -21,6 +21,7 @@ import (
 )
 
 var defaultSynthPatch SynthPatch
+var defaultSynthPatchSampler SynthPatch
 
 func init() {
 	b := []byte(`{"adsr":[64,64,0,64,14336,64,4000,4000],"fx_active":true,"fx_params":[64,-14337,4515,7232,0,0,0,0],"fx_type":"nitro","knobs":[3072,0,512,3,0,0,0,0],"lfo_active":false,"lfo_params":[4608,32767,8448,15360,0,0,0,0],"lfo_type":"value","name":"default","octave":0,"synth_version":2,"type":"cluster"}`)
@@ -28,8 +29,13 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	rand.Seed(time.Now().Unix())
 
+	b = []byte(`{"adsr":[64,10746,32767,10000,4000,64,4000,4000],"base_freq":440.0,"fx_active":false,"fx_params":[8000,8000,8000,8000,8000,8000,8000,8000],"fx_type":"delay","knobs":[0,19361,27626,32767,12000,0,0,8192],"lfo_active":false,"lfo_params":[16000,0,0,16000,0,0,0,0],"lfo_type":"tremolo","name":"20911115_1948","octave":0,"synth_version":2,"type":"sampler"}`)
+	err = json.Unmarshal(b, &defaultSynthPatchSampler)
+	if err != nil {
+		panic(err)
+	}
+	rand.Seed(time.Now().Unix())
 }
 
 type SynthPatch struct {
@@ -162,10 +168,10 @@ var (
 		Setting{
 			Name: "element",
 			Parameters: [][]int{
-				[]int{7168, 5280, 2000, 2144},   // sum, adsr, g, mic
-				Range(-32767, 32767, 512),       // speed
-				[]int{1024, 2448, 5056, 7168},   // wave, adsr, fx, sound
-				[]int{1024, 5824, 10526, 15360}, // blue, green, white, red
+				[]int{7168, 5056, 5280, 2000, 2144},         // sum, adsr, g, mic
+				Range(-32767, 32767, 512),                   // speed
+				[]int{1024, 2000, 2448, 5056, 7168},         // wave, adsr, fx, sound
+				[]int{1024, 2000, 5056, 5824, 10526, 15360}, // blue, green, white, red
 			},
 		},
 		Setting{
@@ -186,6 +192,10 @@ var (
 
 func NewSynthPatch() (sd SynthPatch) {
 	return defaultSynthPatch
+}
+
+func NewSynthSamplePatch() (sd SynthPatch) {
+	return defaultSynthPatchSampler
 }
 
 func RandomSynthPatch(seed ...int64) (sd SynthPatch) {
@@ -353,7 +363,7 @@ func (s SynthPatch) SaveSample(fname string, fnameout string, trimSilence bool) 
 	// generate a truncated, merged audio waveform, downsampled to 1 channel
 	fnameDownsampled := fname + ".down.aif"
 	defer os.Remove(fnameDownsampled)
-	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.5, fnameDownsampled)
+	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.75, fnameDownsampled)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
