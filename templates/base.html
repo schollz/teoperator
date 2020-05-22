@@ -290,7 +290,7 @@
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
                 <div>
-                    <input id="synthPatch" name="synthPatch" type="checkbox" />
+                    <input id="synthPatch" name="synthPatch" type="checkbox" ((if .Metadata))((if .Metadata.IsSynthPatch))checked((end))((end)) />
                     <label for="synthPatch">make synth patch</label>
                 </div>
                 <div>
@@ -312,14 +312,14 @@
             (( end ))
             <p class="pt2">
                 <strong>
-                    chop up internet sounds into drum patches for teenage engineering's op-1.
+                    chop up internet sounds into patches for teenage engineering's op-1.
                 </strong>
             </p>
             (( if .Metadata.UUID ))
             <div class="pt1">
                 <p>the following samples generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
                 <br>
-                <p>click on a waveform to listen to it and download the op-1 drum patch. the varying colors indicate how the op-1 marks are generated.
+                <p>click on a waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
                 </p>
             </div>
             <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:2em;">
@@ -369,14 +369,14 @@
         $('.waveform').click(
             function(e) {
                 console.log(e.currentTarget.id);
+                if ($("#p" + e.currentTarget.id).is(":visible")) {
+                    $("#audio" + e.currentTarget.id).trigger('pause');
+                    $("#audio" + e.currentTarget.id)[0].currentTime = 0;
+                } else {
+                    $("#audio" + e.currentTarget.id).trigger('play');
+                }
                 $("#p" + e.currentTarget.id).fadeToggle("fast", "swing");
                 $("#a" + e.currentTarget.id).fadeToggle("fast", "swing");
-                console.log($("#audio" + e.currentTarget.id).prop("paused"))
-                if ($("#audio" + e.currentTarget.id).prop("paused") == true) {
-                    $("#audio" + e.currentTarget.id).trigger('play');
-                } else {
-                    $("#audio" + e.currentTarget.id).trigger('pause');
-                }
             },
         );
     });

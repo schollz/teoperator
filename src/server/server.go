@@ -57,12 +57,13 @@ type Href struct {
 }
 
 type Metadata struct {
-	Name        string
-	UUID        string
-	OriginalURL string
-	Files       []FileData
-	Start       float64
-	Stop        float64
+	Name         string
+	UUID         string
+	OriginalURL  string
+	Files        []FileData
+	Start        float64
+	Stop         float64
+	IsSynthPatch bool
 }
 
 type FileData struct {
@@ -225,7 +226,7 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 		startStop[1] = startStop[0] + 60
 	}
 	if patchType != "drum" {
-		startStop[1] = startStop[0] + 5.5
+		startStop[1] = startStop[0] + 5.75
 	}
 
 	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
@@ -316,12 +317,13 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 		fname = alternativeName
 	}
 	b, _ := json.Marshal(Metadata{
-		Name:        fname,
-		UUID:        uuid,
-		OriginalURL: u,
-		Files:       files,
-		Start:       startStop[0],
-		Stop:        startStop[1],
+		Name:         fname,
+		UUID:         uuid,
+		OriginalURL:  u,
+		Files:        files,
+		Start:        startStop[0],
+		Stop:         startStop[1],
+		IsSynthPatch: patchType == "synth",
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
@@ -329,8 +331,11 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 }
 
 func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) {
-	sp := op1.NewSynthPatch()
-	fnameout := fname + ".aif"
+	sp := op1.NewSynthSamplePatch()
+	basefolder, basefname := filepath.Split(fname)
+	sp.Name = strings.Split(basefname, ".")[0]
+	fnameout := path.Join(basefolder, strings.Split(basefname, ".")[0]+".aif")
+
 	err = sp.SaveSample(fname, fnameout, true)
 	if err != nil {
 		return
@@ -340,12 +345,12 @@ func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) 
 			models.AudioSegment{
 				Filename: fnameout,
 				StartAbs: 0,
-				EndAbs:   5.5,
+				EndAbs:   5.75,
 			},
 		},
 	}
 
-	fnamewav := fname + ".mp3"
+	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".mp3")
 	cmd := fmt.Sprintf("-y -i %s %s", fnameout, fnamewav)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
@@ -357,7 +362,7 @@ func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) 
 
 	waveformfname := fnamewav + ".png"
 	cmd = fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color ffffff --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
-		fnamewav, waveformfname, 5.5*100,
+		fnamewav, waveformfname, 5.75*100,
 	)
 	logger.Debug(cmd)
 	out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
