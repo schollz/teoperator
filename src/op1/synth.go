@@ -338,17 +338,21 @@ func (s SynthPatch) SaveSample(fname string, fnameout string, trimSilence bool) 
 	startClip := 0.0
 	if trimSilence {
 		var silenceSegments []models.AudioSegment
-		silenceSegments, err = ffmpeg.SplitOnSilence(fname, -30, .1, 0)
+		silenceSegments, err = ffmpeg.SplitOnSilence(fname, -30, .02, 0)
 		if err != nil {
 			return
 		}
 		logger.Debugf("silenceSegments: %+v", silenceSegments)
-		startClip = silenceSegments[0].End
+		if silenceSegments[0].End < 2 {
+			startClip = silenceSegments[0].End
+		} else if silenceSegments[0].Start < 2 {
+			startClip = silenceSegments[0].Start
+		}
 	}
 
 	// generate a truncated, merged audio waveform, downsampled to 1 channel
 	fnameDownsampled := fname + ".down.aif"
-	// defer os.Remove(fnameDownsampled)
+	defer os.Remove(fnameDownsampled)
 	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.5, fnameDownsampled)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
