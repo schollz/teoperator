@@ -102,11 +102,11 @@
     
       input[type="checkbox"],
       input[type="radio"] {
-          order: 1;
+/*          order: 1;
           flex: none;
           width: auto;
           margin-left: 10em;
-          margin-right: -10em;
+          margin-right: -10em;*/
       }
     
       input[type="checkbox"]~label,
@@ -115,6 +115,10 @@
           text-align: left;
           padding-left: 0.4em;
       }
+
+      input.largerCheckbox { 
+            width: 80px; 
+        } 
     
       /* label state styles */
       input:focus~label,
@@ -212,7 +216,7 @@
       }
     
       input,
-      button {
+      button, select {
           background: #0077b6;
           border: 1px solid white;
           border-radius: 4px;
@@ -263,7 +267,7 @@
     img {
         max-width: 100%;
     }
-    input {
+    input, select {
   min-width: 60%;
   max-width:4em;
   overflow: hidden;
@@ -312,8 +316,11 @@
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
                 <div>
-                    <input id="synthPatch" name="synthPatch" type="checkbox" ((if .Metadata))((if .Metadata.IsSynthPatch))checked((end))((end)) />
-                    <label for="synthPatch">make synth patch</label>
+                    <select name="synthPatch" id="synthPatch" style="text-align: center;">
+                        <option value="drum">drum</option>
+                        <option value="synth" ((if $.Metadata.IsSynthPatch))selected((end))>synth</option>
+                    </select>
+                    <label for="synthPatch">patch type:</label>
                 </div>
                 <div>
                     <button class="button" type="submit" style="max-width:4em;  min-width: 60%;">chop it up!</button>
@@ -364,10 +371,7 @@
             ((else))
             <div>
                 <p class="pt1">
-                    enter a url and hit "chop it up!". check "make synth patch" to get a synth patch, otherwise it will become set of drum patches. drum patches will get automatic key assignments based on waveform transients.
-                </p>
-                <p class="pt1">
-                    if you need to upload something, <a target="_blank" href="https://share.schollz.com">use another website</a> to upload first.
+                    <strong>instructions:</strong> enter a url, select patch type, and hit "chop it up!". drum patches will get automatic key assignments based on waveform transients. if you need to upload something, <a target="_blank" href="https://share.schollz.com">use another website</a> to upload first.
                 </p>
                 <p class="pt2">
                     <strong>drum patch examples:</strong> <a href="/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002">poetry</a> from library of congress, <a href="/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F6%2F68%2FTurdus_merula_male_song_at_dawn%252820s%2529.ogg&secondsStart=0&secondsEnd=30">black bird sounds</a>, <a href="/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F7%2F70%2FTimpani_64-c-p5.wav&secondsStart=0&secondsEnd=0">sounds from a timpani</a>. <a href="/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=21.9&secondsEnd=60">spoken word</a> from youtube.

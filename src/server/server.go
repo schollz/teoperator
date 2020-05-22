@@ -173,7 +173,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	secondsEnd, _ := r.URL.Query()["secondsEnd"]
 	patchtypeA, _ := r.URL.Query()["synthPatch"]
 	patchtype := "drum"
-	if len(patchtypeA) > 0 && patchtypeA[0] == "on" {
+	if len(patchtypeA) > 0 && (patchtypeA[0] == "synth" || patchtypeA[0] == "on") {
 		patchtype = "synth"
 	}
 
