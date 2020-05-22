@@ -12,6 +12,17 @@ import (
 	"github.com/schollz/teoperator/src/utils"
 )
 
+// IsInstalled checks whether ffmpeg is installed
+func IsInstalled() bool {
+	cmd := fmt.Sprintf("--help")
+	logger.Debug(cmd)
+	_, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 type Normalization struct {
 	InputI            string `json:"input_i"`
 	InputTp           string `json:"input_tp"`
@@ -36,7 +47,6 @@ func Normalize(fname string, fnameout string) (err error) {
 	}
 	logger.Debugf("ffmpeg output: %s", out)
 	index := bytes.LastIndex(out, []byte("{"))
-	fmt.Println(string(out[index:]))
 	var n Normalization
 	err = json.Unmarshal(out[index:], &n)
 	if err != nil {
