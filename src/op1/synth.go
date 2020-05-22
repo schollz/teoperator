@@ -2,12 +2,17 @@ package op1
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"strings"
+	"time"
+
+	"github.com/speps/go-hashids"
 )
 
 var defaultSynthPatch SynthPatch
@@ -18,6 +23,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	rand.Seed(time.Now().Unix())
 
 }
 
@@ -46,6 +52,11 @@ const (
 	Portamendo
 )
 
+type Setting struct {
+	Name       string
+	Parameters [][]int
+}
+
 // specified allowed values for parameters
 var (
 	AllowedADSR = [][]int{
@@ -59,86 +70,182 @@ var (
 
 	AllowedOctave = []int{-2, 1, 0, 1, 2} // Octave ranges from -2 to +2
 
-	AllowedEngine = map[string][][]int{
-		"cluster": [][]int{
-			Range(3072, 17408, 128),
-			Range(0, 32767, 128),
-			Range(512, 24064, 128),
-			Range(3, 1638, 128),
+	AllowedEngine = []Setting{
+		Setting{
+			Name: "cluster",
+			Parameters: [][]int{
+				Range(3072, 17408, 128),
+				Range(0, 32767, 128),
+				Range(512, 24064, 128),
+				Range(3, 1638, 128),
+			},
 		},
-		"digital": [][]int{
-			Range(0, 32767, 128),
-			Range(2048, 26624, 128),
-			Range(-32768, 32767, 128),
-			Range(0, 32767, 128),
+		Setting{
+			Name: "digital",
+			Parameters: [][]int{
+				Range(0, 32767, 128),
+				Range(2048, 26624, 128),
+				Range(-32768, 32767, 128),
+				Range(0, 32767, 128),
+			},
 		},
-		"dna": [][]int{
-			Range(-29491, 32767, 128),
-			Range(4608, 12800, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
+		Setting{
+			Name: "dna",
+			Parameters: [][]int{
+				Range(-29491, 32767, 128),
+				Range(4608, 12800, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+			},
 		},
-		"drwave": [][]int{
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(32000, 32000, 128),
+		Setting{
+			Name: "drwave",
+			Parameters: [][]int{
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(32000, 32000, 128),
+			},
 		},
-		// TODO rest of engines
 	}
 
-	AllowedEffects = map[string][][]int{
-		"nitro": [][]int{
-			Range(64, 16448, 128),
-			Range(-32768, 32768, 512),
-			Range(0, 20643, 128),
-			Range(64, 16448, 128),
+	AllowedEffects = []Setting{
+		Setting{
+			Name: "nitro",
+			Parameters: [][]int{
+				Range(64, 16448, 128),
+				Range(-32768, 32768, 512),
+				Range(0, 20643, 128),
+				Range(64, 16448, 128),
+			},
 		},
-		"cwo": [][]int{
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
+		Setting{
+			Name: "cwo",
+			Parameters: [][]int{
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+			},
 		},
-		"delay": [][]int{
-			Range(1024, 11264, 128),
-			Range(3276, 32767, 128),
-			Range(0, 16384, 128),
-			Range(0, 32767, 128),
+		Setting{
+			Name: "delay",
+			Parameters: [][]int{
+				Range(1024, 11264, 128),
+				Range(3276, 32767, 128),
+				Range(0, 16384, 128),
+				Range(0, 32767, 128),
+			},
 		},
-		"grid": [][]int{
-			Range(1344, 16704, 128),
-			Range(1344, 16704, 128),
-			Range(0, 32767, 128),
-			Range(0, 32767, 128),
-			Range(8000, 8000, 128),
-			Range(8000, 8000, 128),
-			Range(8000, 8000, 128),
-			Range(8000, 8000, 128),
+		Setting{
+			Name: "grid",
+			Parameters: [][]int{
+				Range(1344, 16704, 128),
+				Range(1344, 16704, 128),
+				Range(0, 32767, 128),
+				Range(0, 32767, 128),
+				Range(8000, 8000, 128),
+				Range(8000, 8000, 128),
+				Range(8000, 8000, 128),
+				Range(8000, 8000, 128),
+			},
 		},
-		// TODO rest of effects
 	}
 
-	AllowedLFO = map[string][][]int{
-		"element": [][]int{
-			[]int{7168, 5280, 2000, 2144},   // sum, adsr, g, mic
-			Range(-32767, 32767, 512),       // speed
-			[]int{1024, 2448, 5056, 7168},   // wave, adsr, fx, sound
-			[]int{1024, 5824, 10526, 15360}, // blue, green, white, red
+	AllowedLFO = []Setting{
+		Setting{
+			Name: "element",
+			Parameters: [][]int{
+				[]int{7168, 5280, 2000, 2144},   // sum, adsr, g, mic
+				Range(-32767, 32767, 512),       // speed
+				[]int{1024, 2448, 5056, 7168},   // wave, adsr, fx, sound
+				[]int{1024, 5824, 10526, 15360}, // blue, green, white, red
+			},
 		},
-		"tremelo": [][]int{
-			Range(16400, 32440, 512),  // speed
-			Range(-32767, 32767, 512), // pitch flucuation
-			Range(-32767, 32767, 512), // volume flucuation
-			Range(0, 32767, 512),      // slope
-			Range(0, 0, 512),          // n/a
-			Range(0, 0, 512),          // n/a
-			Range(0, 0, 512),          // n/a
-			[]int{0, 9216},            // wave, triangle TODO: get rest of these parameters
+		Setting{
+			Name: "tremelo",
+			Parameters: [][]int{
+				Range(16400, 32440, 512),  // speed
+				Range(-32767, 32767, 512), // pitch flucuation
+				Range(-32767, 32767, 512), // volume flucuation
+				// Range(0, 32767, 512),      // slope
+				// Range(0, 0, 512),          // n/a
+				// Range(0, 0, 512),          // n/a
+				// Range(0, 0, 512),          // n/a
+				// []int{0, 9216},            // wave, triangle TODO: get rest of these parameters
+			},
 		},
 	}
 )
+
+func NewSynthPatch() (sd SynthPatch) {
+	return defaultSynthPatch
+}
+
+func RandomSynthPatch(seed ...int64) (sd SynthPatch) {
+	sd = NewSynthPatch()
+
+	if len(seed) > 0 {
+		rand.Seed(seed[0])
+	}
+	for i := 0; i < len(AllowedADSR); i++ {
+		sd.Adsr[i] = AllowedADSR[i][rand.Intn(len(AllowedADSR[i]))]
+	}
+
+	setting := AllowedEngine[rand.Intn(len(AllowedEngine))]
+	sd.Type = setting.Name
+	for i := 0; i < len(setting.Parameters); i++ {
+		sd.Knobs[i] = setting.Parameters[i][rand.Intn(len(setting.Parameters[i]))]
+	}
+
+	setting = AllowedEffects[rand.Intn(len(AllowedEffects))]
+	sd.FxType = setting.Name
+	for i := 0; i < len(setting.Parameters); i++ {
+		sd.FxParams[i] = setting.Parameters[i][rand.Intn(len(setting.Parameters[i]))]
+	}
+	sd.FxActive = true
+
+	setting = AllowedLFO[rand.Intn(len(AllowedLFO))]
+	sd.LfoType = setting.Name
+	for i := 0; i < len(setting.Parameters); i++ {
+		sd.LfoParams[i] = setting.Parameters[i][rand.Intn(len(setting.Parameters[i]))]
+	}
+	sd.LfoActive = true
+
+	sd.Name = strings.Split(sd.Encode(), "-")[0]
+	return
+}
+
+func (s SynthPatch) Encode() (encoded string) {
+	encoded = s.Type
+
+	encoded += Hashid(s.Knobs[:4])
+	encoded += "-" + Hashid(s.Adsr[:4])
+
+	if s.FxActive {
+		encoded += "-" + s.FxType + Hashid(s.FxParams[:4])
+	} else {
+		encoded += "-"
+	}
+
+	if s.LfoActive {
+		encoded += "-" + s.LfoType + Hashid(s.LfoParams[:4])
+	}
+	// 	effect := s.FxType[:2]
+	// 	lfo := s.LfoType[:2]
+	// 	if !s.FxActive {
+	// 		effect = "__"
+	// 	}
+	// 	if !s.LfoActive {
+	// 		lfo = "__"
+	// 	}
+	// fname := fmt.Sprintf("%s%s%s")
+
+	mdhash := fmt.Sprintf("%x", md5.Sum([]byte(encoded)))
+	encoded = "p" + mdhash[:6] + "-" + encoded
+	return
+}
 
 // Check will return an error if any of the values are out of range
 func (s SynthPatch) Check() (err error) {
@@ -159,44 +266,39 @@ func (s SynthPatch) Check() (err error) {
 	}
 
 	// check engine knobs
-	if _, ok := AllowedEngine[s.Type]; !ok {
-		err = fmt.Errorf("engine '%s' not available", s.Type)
-		return
-	}
-	for i := 0; i < len(AllowedEngine[s.Type]); i++ {
-		min := AllowedEngine[s.Type][i][0]
-		max := AllowedEngine[s.Type][i][len(AllowedEngine[s.Type][i])-1]
-		if s.Knobs[i] < min || s.Knobs[i] > max {
-			err = fmt.Errorf("knob %d value %d is not in bounds for %s", i, s.Knobs[i], s.Type)
-			return
+	for _, setting := range AllowedEngine {
+		if setting.Name != s.Type {
+			continue
+		}
+		for i := range setting.Parameters {
+			if !Has(setting.Parameters[i], s.Knobs[i]) {
+				err = fmt.Errorf("engine %d value %d is not in bounds for %s", i, s.Knobs[i], s.Type)
+				return
+			}
 		}
 	}
 
-	// check effects knobs
-	if _, ok := AllowedEffects[s.FxType]; !ok {
-		err = fmt.Errorf("effect '%s' not available", s.FxType)
-		return
-	}
-	for i := 0; i < len(AllowedEffects[s.FxType]); i++ {
-		min := AllowedEffects[s.FxType][i][0]
-		max := AllowedEffects[s.FxType][i][len(AllowedEffects[s.FxType][i])-1]
-		if s.Knobs[i] < min || s.Knobs[i] > max {
-			err = fmt.Errorf("knob %d value %d is not in bounds for %s", i, s.Knobs[i], s.FxType)
-			return
+	for _, setting := range AllowedEffects {
+		if setting.Name != s.FxType {
+			continue
+		}
+		for i := range setting.Parameters {
+			if !Has(setting.Parameters[i], s.FxParams[i]) {
+				err = fmt.Errorf("fx %d value %d is not in bounds for %s", i, s.FxParams[i], s.FxType)
+				return
+			}
 		}
 	}
 
-	// check lfo knobs
-	if _, ok := AllowedLFO[s.LfoType]; !ok {
-		err = fmt.Errorf("effect '%s' not available", s.LfoType)
-		return
-	}
-	for i := 0; i < len(AllowedLFO[s.LfoType]); i++ {
-		min := AllowedLFO[s.LfoType][i][0]
-		max := AllowedLFO[s.LfoType][i][len(AllowedLFO[s.LfoType][i])-1]
-		if s.Knobs[i] < min || s.Knobs[i] > max {
-			err = fmt.Errorf("knob %d value %d is not in bounds for %s", i, s.Knobs[i], s.FxType)
-			return
+	for _, setting := range AllowedLFO {
+		if setting.Name != s.LfoType {
+			continue
+		}
+		for i := range setting.Parameters {
+			if !Has(setting.Parameters[i], s.LfoParams[i]) {
+				err = fmt.Errorf("lfo %d value %d is not in bounds for %s", i, s.LfoParams[i], s.LfoType)
+				return
+			}
 		}
 	}
 
@@ -238,7 +340,7 @@ func (s SynthPatch) Save(fnameOut string) (err error) {
 	}
 
 	// clip out the current data
-	b := defaultSynthAif
+	b := append([]byte{}, defaultSynthAif...)
 	index1 := bytes.Index(b, []byte("APPL"))
 	if index1 < 0 {
 		err = fmt.Errorf("could not find header ")
@@ -315,4 +417,36 @@ func Range(start, end, inc int) (r []int) {
 		r[len(r)-1] = end
 	}
 	return
+}
+
+func Hashid(ints []int) string {
+	hd := hashids.NewData()
+	hd.Salt = "op-1"
+	h, err := hashids.NewWithData(hd)
+	if err != nil {
+		panic(err)
+	}
+	i2 := make([]int, len(ints)*2)
+	for i, val := range ints {
+		if val < 0 {
+			i2[(i * 2)] = 0
+		} else {
+			i2[(i * 2)] = 1
+		}
+		i2[(i*2)+1] = int(math.Abs(float64(val)))
+	}
+	id, err := h.Encode(i2)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
+func Has(list []int, val int) bool {
+	for _, val2 := range list {
+		if val == val2 {
+			return true
+		}
+	}
+	return false
 }

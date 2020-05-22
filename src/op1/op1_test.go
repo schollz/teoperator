@@ -1,11 +1,30 @@
 package op1
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestEncode(t *testing.T) {
+	sp := NewSynthPatch()
+	sp.FxActive = false
+	sp.LfoActive = true
+	fmt.Println(sp.Encode())
+}
+
+func TestRandom(t *testing.T) {
+	for i := 1; i <= 9; i++ {
+		sp := RandomSynthPatch(42 + int64(i))
+		fmt.Printf("%+v\n", sp)
+
+		err := sp.Save(fmt.Sprintf("%s.aif", sp.Name))
+		assert.Nil(t, err)
+	}
+}
 
 func TestDrumPatch(t *testing.T) {
 	dp := NewDrumPatch()
@@ -34,9 +53,11 @@ func TestReadSynth(t *testing.T) {
 	// sp.Adsr[3] = 5003
 	// assert.Nil(t, sp.Save("default3.aif"))
 
-	// b, _ := ioutil.ReadFile("reverse/engines/cluster0.aif")
-	// b64 := base64.StdEncoding.EncodeToString(b)
-	// ioutil.WriteFile("out.base64", []byte(b64), 0644)
+	b, err := ioutil.ReadFile("20911114_1923.aif")
+	assert.Nil(t, err)
+	b64 := base64.StdEncoding.EncodeToString(b)
+	err = ioutil.WriteFile("out.base64", []byte(b64), 0644)
+	assert.Nil(t, err)
 
 	// sp, err = ReadSynthPatch("reverse/engines/drwave_min.aif")
 	// assert.Nil(t, err)
