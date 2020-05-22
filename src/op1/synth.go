@@ -9,9 +9,13 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/ffmpeg"
+	"github.com/schollz/teoperator/src/models"
 	"github.com/speps/go-hashids"
 )
 
@@ -324,6 +328,31 @@ func ReadSynthPatch(fname string) (sp SynthPatch, err error) {
 
 	fmt.Println(string(b[index1+4 : index2+index1+1]))
 	err = json.Unmarshal(b[index1+4:index2+index1+1], &sp)
+
+	return
+}
+
+// Build a synth patch from a file
+func (s *SynthPatch) Build(fname string, trimSilence bool) (err error) {
+	startClip := 0.0
+	if trimSilence {
+		var silenceSegments []models.AudioSegment
+		silenceSegments, err = ffmpeg.SplitOnSilence(fname, -30, .1, 0)
+		if err != nil {
+			return
+		}
+		logger.Debugf("silenceSegments: %+v", silenceSegments)
+		startClip = silenceSegments[0].End
+	}
+
+	// generate a merged audio waveform, downsampled to 1 channel
+	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.5, fname+".aif")
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
+		return
+	}
 
 	return
 }

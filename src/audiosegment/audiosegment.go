@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/ffmpeg"
+	"github.com/schollz/teoperator/src/models"
 	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
 )
@@ -26,18 +28,9 @@ func init() {
 	}
 }
 
-type AudioSegment struct {
-	Filename string
-	Start    float64
-	End      float64
-	Duration float64
-	StartAbs float64
-	EndAbs   float64
-}
-
 const SECONDSATEND = 0.1
 
-func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSegments [][]AudioSegment, err error) {
+func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSegments [][]models.AudioSegment, err error) {
 	err = Convert(fname, fname+".mp3")
 	if err != nil {
 		return
@@ -70,7 +63,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 		start float64
 	}
 	type result struct {
-		segments []AudioSegment
+		segments []models.AudioSegment
 		err      error
 	}
 	jobs := make(chan job, numJobs)
@@ -91,7 +84,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 					continue
 				}
 
-				r.segments, _ = SplitOnSilence(fnameTrunc, -22, 0.2)
+				r.segments, _ = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
 				r.err = DrawSegments(r.segments)
 				if err != nil {
 					logger.Error(err)
@@ -157,7 +150,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 // composite lifeb.png canvas.gif -compose Dst_In 3.png
 // convert 3.png -fuzz 1% -transparent black 4.png
 // eog 4.png
-func DrawSegments(segments []AudioSegment) (err error) {
+func DrawSegments(segments []models.AudioSegment) (err error) {
 	if len(segments) == 0 {
 		err = fmt.Errorf("no segments")
 		return
@@ -252,90 +245,9 @@ func getImageDimension(imagePath string) (int, int) {
 	return image.Width, image.Height
 }
 
-// SplitOnSilence splits any audio file based on its silence
-func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) (segments []AudioSegment, err error) {
-	cmd := fmt.Sprintf("-i %s -af silencedetect=noise=%ddB:d=%2.3f -f null -", fname, silenceDB, silenceMinimumSeconds)
-	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
-	if err != nil {
-		return
-	}
-	logger.Debugf("ffmpeg output: %s", out)
-	if !strings.Contains(string(out), "silence_end") {
-		err = fmt.Errorf("could not find silence")
-		return
-	}
-
-	var segment AudioSegment
-	segment.Start = 0
-	for _, line := range strings.Split(string(out), "\n") {
-		// if strings.Contains(line, "silence_start") {
-		// 	seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line+" ", "silence_start: ", " "))
-		// 	if err == nil {
-		// 		segment.End = seconds
-		// 		segment.Filename = fname
-		// 		segment.Duration = segment.End - segment.Start
-		// 		segments = append(segments, segment)
-		// 	} else {
-		// 		logger.Debug(err)
-		// 	}
-		// } else if strings.Contains(line, "silence_end") {
-		// 	seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
-		// 	if err == nil {
-		// 		segment.Start = seconds
-		// 	} else {
-		// 		logger.Debug(err)
-		// 	}
-		if strings.Contains(line, "silence_end") {
-			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "silence_end: ", " "))
-			if err == nil {
-				segment.End = seconds - 0.2
-				segment.Filename = fname
-				segment.Duration = segment.End - segment.Start
-				if segment.Duration > 0.25 {
-					segments = append(segments, segment)
-				}
-				segment.Start = seconds - 0.2
-			} else {
-				logger.Debug(err)
-			}
-		} else if strings.Contains(line, "time=") {
-			seconds, err := utils.ConvertToSeconds(utils.GetStringInBetween(line, "time=", " "))
-			if err == nil {
-				segment.End = seconds
-				segment.Duration = segment.End - segment.Start
-				segment.Filename = fname
-				if segment.Duration < 0.25 {
-					segments[len(segments)-1].End = seconds
-					segments[len(segments)-1].Duration = segments[len(segments)-1].End - segments[len(segments)-1].Start
-				} else {
-					segments = append(segments, segment)
-				}
-			} else {
-				logger.Debug(err)
-			}
-		}
-	}
-
-	newSegments := make([]AudioSegment, len(segments))
-	i := 0
-	for _, segment := range segments {
-		if segment.Duration > 0.1 {
-			newSegments[i] = segment
-			i++
-		}
-	}
-	if i == 0 {
-		err = fmt.Errorf("could not find any segments")
-		return
-	}
-	newSegments = newSegments[:i]
-	return newSegments, nil
-}
-
-// // Split will take AudioSegments and split them apart
-// func Split(segments []AudioSegment, fnamePrefix string, addsilence bool) (splitSegments []AudioSegment, err error) {
-// 	splitSegments = make([]AudioSegment, len(segments))
+// // Split will take models.AudioSegments and split them apart
+// func Split(segments []models.AudioSegment, fnamePrefix string, addsilence bool) (splitSegments []models.AudioSegment, err error) {
+// 	splitSegments = make([]models.AudioSegment, len(segments))
 // 	for i := range segments {
 // 		splitSegments[i] = segments[i]
 // 		splitSegments[i].Filename = fmt.Sprintf("%s%d.wav", fnamePrefix, i)
@@ -392,13 +304,13 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 // }
 
 // // Merge takes audio segments and creates merges of at most `secondsInEachMerge` seconds
-// func Merge(segments []AudioSegment, fnamePrefix string, secondsInEachMerge float64) (mergedSegments []AudioSegment, err error) {
+// func Merge(segments []models.AudioSegment, fnamePrefix string, secondsInEachMerge float64) (mergedSegments []models.AudioSegment, err error) {
 // 	fnamesToMerge := []string{}
 // 	currentLength := 0.0
 // 	mergeNum := 0
 // 	for _, segment := range segments {
 // 		if segment.Duration+currentLength > secondsInEachMerge {
-// 			var mergeSegment AudioSegment
+// 			var mergeSegment models.AudioSegment
 // 			mergeSegment, err = MergeAudioFiles(fnamesToMerge, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
 // 			if err != nil {
 // 				return
@@ -411,7 +323,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 // 		fnamesToMerge = append(fnamesToMerge, segment.Filename)
 // 		currentLength += segment.Duration
 // 	}
-// 	var mergeSegment AudioSegment
+// 	var mergeSegment models.AudioSegment
 // 	mergeSegment, err = MergeAudioFiles(fnamesToMerge, fmt.Sprintf("%s%d.wav", fnamePrefix, mergeNum))
 // 	if err != nil {
 // 		return
@@ -421,7 +333,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64) 
 // 	return
 // }
 
-// func MergeAudioFiles(fnames []string, outfname string) (segment AudioSegment, err error) {
+// func MergeAudioFiles(fnames []string, outfname string) (segment models.AudioSegment, err error) {
 // 	f, err := ioutil.TempFile(os.TempDir(), "merge")
 // 	if err != nil {
 // 		return
