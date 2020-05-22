@@ -105,6 +105,9 @@ func loadTemplates() {
 		"removeSlashes": func(s string) string {
 			return strings.TrimPrefix(strings.TrimSpace(strings.Replace(s, "/", "-", -1)), "-location-")
 		},
+		"removeDots": func(s string) string {
+			return strings.TrimSpace(strings.Replace(s, ".", "", -1))
+		},
 		"minusOne": func(s int) int {
 			return s - 1
 		},
@@ -117,6 +120,7 @@ func loadTemplates() {
 		},
 		"filebase": func(s string) string {
 			_, base := filepath.Split(s)
+			base = strings.Replace(base, ".", "", -1)
 			return base
 		},
 		"roundfloat": func(f float64) string {
@@ -166,9 +170,9 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	audioURL, _ := r.URL.Query()["audioURL"]
 	secondsStart, _ := r.URL.Query()["secondsStart"]
 	secondsEnd, _ := r.URL.Query()["secondsEnd"]
-	patchtypeA, _ := r.URL.Query()["patchType"]
+	patchtypeA, _ := r.URL.Query()["synthPatch"]
 	patchtype := "drum"
-	if len(patchtypeA) > 0 && patchtypeA[0] == "synth" {
+	if len(patchtypeA) > 0 && patchtypeA[0] == "on" {
 		patchtype = "synth"
 	}
 
@@ -219,6 +223,9 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 	log.Debug(u, startStop)
 	if startStop[1]-startStop[0] < 12 {
 		startStop[1] = startStop[0] + 60
+	}
+	if patchType != "drum" {
+		startStop[1] = startStop[0] + 5.5
 	}
 
 	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
