@@ -48,8 +48,8 @@
       body {
           background: #0077b6;
           color: white;
-          padding-top: 1em;
-          padding-bottom: 2em;
+          padding-top: 0em;
+          padding-bottom: 0em;
       }
     
       .mw30 {
@@ -128,7 +128,7 @@
       }
     
       #app {
-          padding-top: 3em;
+          padding-top: 2em;
           padding-left: 0.5em;
           padding-right: 0.5em;
       }
@@ -277,7 +277,7 @@
             <legend>
                 <pre style="float:right; text-align: right;">
 
-   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.1em;">op-1</strong></span></a> v0.0.2alpha <small>(there may be bugs 🐛🐞🐜)</small>
+   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.1em;">op-1</strong></span></a> v1.0.0
             </legend>
             <form action="/patch" method="get">
                 <div>
@@ -317,9 +317,9 @@
             </p>
             (( if .Metadata.UUID ))
             <div class="pt1">
-                <p>the following samples generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
+                <p>samples generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
                 <br>
-                <p>click on a waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
+                <p>click the waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
                 </p>
             </div>
             <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:2em;">
@@ -353,7 +353,8 @@
                 </p>
             </div>
             ((end))
-            <p class="pt2" style="text-transform: lowercase;">
+            <br><br>
+            <p class="pt3" style="text-transform: lowercase;">
                 please note: <small>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
             </p>
             (( end ))
@@ -381,6 +382,7 @@
         );
     });
     </script>
+    <img src="/static/image/op1.png" width="70%" style="float:right; max-width: 900px;">
 </body>
 
 </html>
