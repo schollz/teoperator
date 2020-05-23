@@ -32,10 +32,19 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/static/image/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/image/favicon/favicon-16x16.png">
     <link rel="manifest" href="/static/image/favicon/manifest.json">
-    <meta name="msapplication-TileColor" content="#0077b6;">
+    <meta name="msapplication-TileColor" content="#4d4d4d;">
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-    <meta name="theme-color" content="#0077b6;">
+    <meta name="theme-color" content="#4d4d4d;">
     <style>
+        @font-face {font-family: "Univers TE20 Thin";
+    src: url("/static/font/1c6eb2519248229e6860a41985bf1827.eot"); /* IE9*/
+    src: url("/static/font/1c6eb2519248229e6860a41985bf1827.iefix.eot") format("embedded-opentype"), /* IE6-IE8 */
+    url("/static/font/1c6eb2519248229e6860a41985bf1827.woff2") format("woff2"), /* chrome firefox */
+    url("/static/font/1c6eb2519248229e6860a41985bf1827.woff") format("woff"), /* chrome firefox */
+    url("/static/font/1c6eb2519248229e6860a41985bf1827.ttf") format("truetype"), /* chrome firefox opera Safari, Android, iOS 4.2+*/
+    url("/static/font/1c6eb2519248229e6860a41985bf1827.svg") format("svg"); /* iOS 4.1- */
+}
+
         /* some basic styling to make things pretty */
       *,
       *:before,
@@ -46,10 +55,14 @@
       }
     
       body {
-          background: #0077b6;
-          color: white;
+          background: #4d4d4d;
+          color: #b2b2b2;
           padding-top: 0em;
           padding-bottom: 0em;
+          font-family: "Univers TE20 Thin";
+          letter-spacing: 0.02em;
+          line-height: 1em;
+          text-rendering: optimizelegibility;
       }
     
       .mw30 {
@@ -203,12 +216,7 @@
     
       dd {}
     
-      input,
-      button,
-      body,
-      p {
-          font-family: "Lucida Console", Monaco, monospace
-      }
+
     
       .link {
           cursor: pointer;
@@ -217,8 +225,8 @@
     
       input,
       button, select {
-          background: #0077b6;
-          border: 1px solid white;
+          background: #4d4d4d;
+          border: 1px solid #b2b2b2;
           border-radius: 4px;
           color: white;
           padding: 0.5em;
@@ -231,13 +239,13 @@
       button:hover {
           background-color: white;
           /* Green */
-          color: #0077b6;
+          color: #4d4d4d;
       }
     
       input:focus {
           background-color: white;
           /* Green */
-          color: #0077b6;
+          color: #4d4d4d;
       }
     
       a {
@@ -299,13 +307,18 @@
         </div>
     </div>
     <div id="app">
-        <fieldset class="mw30" style="padding-top: 2em;">
+        <fieldset class="mw30">
             <legend>
                 <pre style="float:right; text-align: right;">
 
    </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.2em;">op-1</strong></span></a> v1.0.0β
             </legend>
-            <form action="/patch" method="get">
+            <p class="pt1">
+                <strong>
+                    make internet sounds into a drum or synth patch for the teenage engineering op-1.
+                </strong>
+            </p>
+            <form action="/patch" method="get" class="pt1">
                 <div>
                     <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))" />
                     <label for="audioURL">url:</label>
@@ -323,7 +336,7 @@
                     <label for="synthPatch">patch type:</label>
                 </div>
                 <div>
-                    <button class="button" type="submit" style="max-width:4em;  min-width: 60%;">chop it up!</button>
+                    <button class="button" type="submit" style="max-width:4em;  min-width: 60%; font-size: 100%;">chop it up!</button>
                     <label for="name"></label>
                 </div>
             </form>
@@ -339,19 +352,12 @@
                 </p>
             </div>
             (( end ))
-            <p class="pt2">
-                <strong>
-                    chop up internet sounds into drum or synth patches for teenage engineering's op-1.
-                </strong>
-            </p>
             (( if .Metadata.UUID ))
-            <div class="pt2">
-                <p><span style="font-size:140%; font-weight:900;">((if $.Metadata.IsSynthPatch))synth patch((else))drum patches((end))</span> generated from '<a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>'</p>
-                <br>
-                <p>click the waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
+            <div class="pt1">
+                <p><span style="font-size:140%; font-weight:900;">((if $.Metadata.IsSynthPatch))synth patch((else))drum patches((end))</span> generated from <a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>. click the waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
                 </p>
             </div>
-            <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:2em;">
+            <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:1em;">
                 (( range .Metadata.Files))
                 <div class="pt1">
                     <p style="display:none;" id="p((filebase .Prefix))">
@@ -371,7 +377,7 @@
             ((else))
             <div>
                 <p class="pt1">
-                    <strong>instructions:</strong> enter a url, select patch type, and hit "chop it up!". drum patches will get automatic key assignments based on waveform transients. if you need to upload something, <a target="_blank" href="https://share.schollz.com">use another website</a> to upload first.
+                    <strong>instructions:</strong> enter a url, start and end (optional), select patch type, and hit "chop it up!". drum patches will get automatic key assignments based on waveform transients. if you need to upload something, <a target="_blank" href="https://share.schollz.com">use another website</a> to upload first.
                 </p>
                 <p class="pt2">
                     <strong>drum patch examples:</strong> <a href="/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002">poetry</a> from library of congress, <a href="/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F6%2F68%2FTurdus_merula_male_song_at_dawn%252820s%2529.ogg&secondsStart=0&secondsEnd=30">black bird sounds</a>, <a href="/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F7%2F70%2FTimpani_64-c-p5.wav&secondsStart=0&secondsEnd=0">sounds from a timpani</a>. <a href="/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=21.9&secondsEnd=60">spoken word</a> from youtube.
@@ -381,13 +387,13 @@
                 </p>
             </div>
             ((end))
-            <p class="pt3" style="text-transform: lowercase;">
-                please note: <small>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
+            <p class="pt2" style="text-transform: lowercase;">
+                please note: <small>this is <underline>not a teenage engineering product</underline>. by using this web app you are acknowleding that it comes WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</small>
             </p>
             (( end ))
             (( define "footer" ))
             <div class="pt3" style="text-align: right;">
-                <small>Made <a href="https://github.com/schollz/teoperator">open-source by @schollz</a> (c)2020.</small>
+                <small>Made <a href="https://github.com/schollz/teoperator" target="_blank">open-source</a> by <a href="https://www.instagram.com/infinitedigits/" target="_blank">infinitedigits</a> (c)2020.</small>
             </div>
         </div>
     </div>

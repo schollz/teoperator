@@ -166,7 +166,7 @@ func DrawSegments(segments []models.AudioSegment) (err error) {
 		logger.Errorf("audiowaveform: %s", out)
 	}
 
-	colors := []string{"#EEEEEE", "#001B44"}
+	colors := []string{"#EEEEEE", "#343434"}
 	canvases := []string{}
 	for i := range segments {
 		canvasName := utils.TempFileName("canvas", ".png")
