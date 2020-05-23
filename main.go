@@ -9,20 +9,23 @@ import (
 	"time"
 
 	log "github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/download"
 	"github.com/schollz/teoperator/src/ffmpeg"
 	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/server"
 )
 
 func main() {
-	var flagSynth, flagOut string
-	var flagDebug, flagServer bool
+	var flagSynth, flagOut, flagDuct string
+	var flagDebug, flagServer, flagWorker bool
 	var flagPort int
 	flag.BoolVar(&flagDebug, "debug", false, "debug mode")
 	flag.BoolVar(&flagServer, "serve", false, "make a server")
+	flag.BoolVar(&flagWorker, "work", false, "start a download worker")
 	flag.IntVar(&flagPort, "port", 8053, "port to use")
 	flag.StringVar(&flagSynth, "synth", "", "build synth patch from file")
 	flag.StringVar(&flagOut, "out", "", "name of new patch")
+	flag.StringVar(&flagDuct, "duct", "", "name of duct")
 	flag.Parse()
 
 	if flagDebug {
@@ -30,6 +33,8 @@ func main() {
 	} else {
 		log.SetLevel("info")
 	}
+
+	download.Duct = flagDuct
 
 	if !ffmpeg.IsInstalled() {
 		fmt.Println("ffmpeg not installed")
@@ -51,6 +56,8 @@ func main() {
 		if err == nil {
 			fmt.Printf("converted '%s' to op-1 synth patch '%s' in %s\n", fname, flagOut, time.Since(st))
 		}
+	} else if flagWorker {
+		err = download.Work()
 	} else {
 		flag.PrintDefaults()
 	}

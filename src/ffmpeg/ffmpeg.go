@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -54,6 +55,12 @@ func Normalize(fname string, fnameout string) (err error) {
 	}
 
 	logger.Debugf("n: %+v", n)
+	if strings.Contains(n.InputI, "inf") {
+		logger.Debug("returning, because of inf values")
+		os.Rename(fname, fnameout)
+		return
+	}
+
 	cmd = fmt.Sprintf("-i %s -ar 44100 -af loudnorm=I=-23:LRA=7:tp=-2:measured_I=%s:measured_LRA=%s:measured_tp=%s:measured_thresh=%s:offset=-0.47 -y %s",
 		fname,
 		n.InputI,

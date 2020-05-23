@@ -1,15 +1,22 @@
 package download
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/utils"
 )
+
+var Duct = ""
 
 // PassThru wraps an existing io.Reader.
 //
@@ -39,6 +46,13 @@ func (pt *PassThru) Read(p []byte) (int, error) {
 // Download a file and limit the number of bytes. If the bytes exceed,
 // it will throw an error and delete the downloaded file.
 func Download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
+	if Duct != "" {
+		return DownloadFromDuct(u, fname)
+	}
+	return download(u, fname, byteLimit)
+}
+
+func download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
 	// download youtube
 	if strings.Contains(u, "youtube") {
 		return Youtube(u, fname)
@@ -72,7 +86,7 @@ func Download(u string, fname string, byteLimit int64) (alternativeName string, 
 }
 
 func Youtube(u string, fname string) (alternativeName string, err error) {
-	cmd := fmt.Sprintf("--proxy socks5://127.0.0.1:9050 --extract-audio --audio-format mp3 %s",
+	cmd := fmt.Sprintf("--extract-audio --audio-format mp3 %s",
 		u,
 	)
 	logger.Debug(cmd)
@@ -96,5 +110,121 @@ func Youtube(u string, fname string) (alternativeName string, err error) {
 	}
 	alternativeName = destFile
 	err = os.Rename(destFile, fname)
+	return
+}
+
+// worker stuff
+
+type Job struct {
+	Job             string `json:"j,omitempty"`
+	Data            []byte `json:"d,omitempty"`
+	AlternativeName string `json:"a,omitempty"`
+	Error           string `json:"e,omitempty"`
+}
+
+func DownloadFromDuct(u string, fname string) (alternativeName string, err error) {
+	// establish channel
+	specialChannel := utils.RandStringBytesMaskImpr(8)
+	err = sendjob(Duct, Job{
+		Job: specialChannel,
+	}, 1*time.Minute)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	// send job to new channel
+	err = sendjob(specialChannel, Job{
+		Job: u,
+	}, 10*time.Second)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	// get job from special channel
+	j, err := getjob(specialChannel, 10*time.Minute)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	err = ioutil.WriteFile(fname, j.Data, 0644)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	alternativeName = j.AlternativeName
+	return
+}
+
+func Work() (err error) {
+	for {
+		dowork()
+	}
+	return
+}
+
+func dowork() (err error) {
+	// get channel
+	logger.Debugf("listening to %s for job", Duct)
+	j, err := getjob(Duct, 10*time.Hour)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	// subscribe to channel
+	specialChannel := j.Job
+	logger.Debugf("subscribing to channel %s", specialChannel)
+	j, err = getjob(specialChannel, 10*time.Second)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	// send job back
+	defer func() {
+		if err != nil {
+			j.Error = err.Error()
+		}
+		err = sendjob(specialChannel, j, 10*time.Minute)
+		if err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	tempfile := utils.RandStringBytesMaskImpr(8)
+	defer os.Remove(tempfile)
+	j.AlternativeName, err = download(j.Job, tempfile, 1000000000)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	j.Data, err = ioutil.ReadFile(tempfile)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	return
+}
+
+func getjob(duct string, timeout time.Duration) (j Job, err error) {
+	var myClient = &http.Client{Timeout: timeout}
+	r, err := myClient.Get("https://duct.schollz.com/" + duct + Duct)
+	if err != nil {
+		return
+	}
+	defer r.Body.Close()
+	err = json.NewDecoder(r.Body).Decode(&j)
+	return
+}
+
+func sendjob(duct string, j Job, timeout time.Duration) (err error) {
+	b, err := json.Marshal(j)
+	if err != nil {
+		return
+	}
+	logger.Debugf("sending job via %s: %s", duct, j.Job)
+	var myClient = &http.Client{Timeout: timeout}
+	_, err = myClient.Post("https://duct.schollz.com/"+duct+Duct, "application/json", bytes.NewBuffer(b))
 	return
 }
