@@ -3,6 +3,7 @@
 
 <head>
     <title>chop | make op-1 patches</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.1">
     <meta name="title" content="chop | make op-1 patches">
     <meta name="description" content="create drum patches for the teenage engineering op-1 synthesizer from any sound on the internet.">
     <!-- Open Graph / Facebook -->
@@ -62,16 +63,24 @@
           letter-spacing: 0.02em;
           line-height: 1em;
           text-rendering: optimizelegibility;
-          font-size: 2em;
-
       }
 
 
-@media only (max-width: 320px) {
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+
   body {
-          font-size: 0.25em;
+          font-size: 18px;
   }
 }
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+  body {
+          font-size: 24px;
+  }
+}
+
 
       .mw30 {
           box-sizing: border-box;
@@ -111,6 +120,15 @@
           user-select: none;
           cursor: pointer;
       }
+
+      /* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+
+  label {
+          width: 6em;
+  }
+}
+
     
       div,
       button,
