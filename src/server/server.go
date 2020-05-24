@@ -222,8 +222,9 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 
 func generateUserData(u string, startStop []float64, patchType string) (uuid string, err error) {
 	log.Debug(u, startStop)
+	log.Debug(patchType)
 	if startStop[1]-startStop[0] < 12 {
-		startStop[1] = startStop[0] + 60
+		startStop[1] = startStop[0] + 12
 	}
 	if patchType != "drum" {
 		startStop[1] = startStop[0] + 5.75

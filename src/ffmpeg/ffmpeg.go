@@ -89,10 +89,11 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, 
 		return
 	}
 	logger.Debugf("ffmpeg output: %s", out)
-	if !strings.Contains(string(out), "silence_end") {
-		err = fmt.Errorf("could not find silence")
-		return
-	}
+	// if !strings.Contains(string(out), "silence_end") {
+	// 	err = fmt.Errorf("could not find silence")
+	// 	logger.Error(err)
+	// 	return
+	// }
 
 	var segment models.AudioSegment
 	segment.Start = 0

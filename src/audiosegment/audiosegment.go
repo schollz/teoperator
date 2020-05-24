@@ -78,16 +78,21 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%03d.mp3", filenameonly[:3], int(j.start)))
 				fnameTruncOP1 := path.Join(folder, fmt.Sprintf("%s%03d.aif", filenameonly[:3], int(j.start)))
 				r.err = Truncate(fname, fnameTrunc, utils.SecondsToString(j.start), utils.SecondsToString(j.start+secondsMax))
-				if err != nil {
-					logger.Error(err)
+				if r.err != nil {
+					logger.Error(r.err)
 					results <- r
 					continue
 				}
 
-				r.segments, _ = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
+				r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
+				if r.err != nil {
+					logger.Error(r.err)
+					results <- r
+					continue
+				}
 				r.err = DrawSegments(r.segments)
-				if err != nil {
-					logger.Error(err)
+				if r.err != nil {
+					logger.Error(r.err)
 					results <- r
 					continue
 				}
@@ -114,9 +119,10 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 				}
 
 				// write as op1 data
-				err = op1data.Save(fnameTrunc, fnameTruncOP1)
-				if err != nil {
-					return
+				r.err = op1data.Save(fnameTrunc, fnameTruncOP1)
+				if r.err != nil {
+					logger.Error(r.err)
+					continue
 				}
 				results <- r
 			}
