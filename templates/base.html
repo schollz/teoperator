@@ -324,6 +324,17 @@
      div#main-content { 
        padding-top: 70px;
     }
+
+    .dropzone .dz-message {
+        margin: 0;
+    }
+
+    #preview {
+        font-size: 80%;
+    }
+    .dropzone {
+        min-height: auto;
+    }
     </style>
 </head>
 
@@ -346,17 +357,18 @@
                 </strong>
             </p>
             <form action="/patch" method="get" class="pt1">
-                <div>
-                    <div id="filesBox" class="dropzone dz-clickable">
-                        <div class="dz-message" data-dz-message=""><span style="text-align: right;">Drop or click here to share a file.<br>
-                                <p style="text-align: right;"><small>Max file size: 500 MB</small></p>
-                            </span></div>
-                    </div>
-                    <label for="filesBox">upload:</label>
-                </div>
+
                 <div>
                     <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))" />
                     <label for="audioURL">url:</label>
+                </div>
+                <div>
+                    <div id="filesBox" class="dropzone dz-clickable">
+                        <div class="dz-message" data-dz-message=""><p style="font-size:80%; color: #b2b2b2;">Drop or click here to upload sound.<br>
+                        </p>
+                    </div>
+                    </div>
+                    <label for="filesBox">or upload:</label>
                 </div>
                 <div>
                     <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))" style="min-width: 30%;">
@@ -491,10 +503,10 @@
         drop.on("uploadprogress", function(file, progress, bytesSent) {
             progress = bytesSent / file.size * 100;
             try {
-                var width = document.getElementById('preview').offsetWidth - 70;
-                var repeatTimes = Math.round(width / 9.03 * progress / 100);
+                var width = document.getElementById('preview').offsetWidth - 120;
+                var repeatTimes = Math.round(18*progress / 100);
                 document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
-<p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
+                <p>&nbsp;${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
 
             } catch (err) {}
         });
@@ -506,10 +518,9 @@
             console.log("success");
             console.log(response);
             response = JSON.parse(file.xhr.response);
-            console.log(file)
-            if (response.id != "none") {
-                location.replace("/" + response.id);
-            }
+            console.log(file);
+            console.log(response);
+            $("#audioURL").val(response.id);
         });
 
         drop.on('error', function(file, response) {

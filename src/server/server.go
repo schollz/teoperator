@@ -1,7 +1,6 @@
 package server
 
 import (
-	"compress/gzip"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -32,7 +31,7 @@ import (
 )
 
 const MaxBytesPerFile = 100000000
-const ContentDirectory = "data"
+const ContentDirectory = "data/uploads"
 
 // uploads keep track of parallel chunking
 var uploadsHashLock sync.Mutex
@@ -48,6 +47,7 @@ func Run(port int) (err error) {
 	uploadsHash = make(map[string]string)
 
 	os.Mkdir("data", os.ModePerm)
+	os.MkdirAll(ContentDirectory, os.ModePerm)
 	loadTemplates()
 	log.Infof("listening on :%d", port)
 	http.HandleFunc("/static/", httpfileserver.New("/static/", "static/", httpfileserver.OptionNoCache(true)).Handle())
@@ -59,6 +59,7 @@ func Run(port int) (err error) {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	t := time.Now().UTC()
+	log.Infof("%v %v %v %s\n", r.RemoteAddr, r.Method, r.URL.Path, time.Since(t))
 	err := handle(w, r)
 	if err != nil {
 		log.Error(err)
@@ -175,7 +176,7 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		http.Redirect(w, r, "/static/sitemap.xml", http.StatusFound)
 	} else if r.URL.Path == "/" {
 		return viewMain(w, r, "", "main")
-	} else if r.URL.Path == "/post" {
+	} else if r.URL.Path == "/file" {
 		return handlePost(w, r)
 	} else if r.URL.Path == "/patch" {
 		return viewPatch(w, r)
@@ -206,12 +207,13 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 	if int64(totalChunks)*int64(chunkSize) > MaxBytesPerFile {
 		err = fmt.Errorf("Upload exceeds max file size: %d.", MaxBytesPerFile)
 		log.Error(err)
-		return
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		return nil
 	}
 	uuid := r.FormValue("dzuuid")
 	log.Debugf("working on chunk %d/%d for %s", chunkNum, totalChunks, uuid)
 
-	f, err := ioutil.TempFile(ContentDirectory, "sharetemp")
+	f, err := ioutil.TempFile(ContentDirectory, "upload")
 	if err != nil {
 		log.Error(err)
 		return
@@ -236,8 +238,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 			log.Debugf("%+v", uploadsFileNames)
 			delete(uploadsInProgress, uuid)
 
-			fFinal, _ := ioutil.TempFile(ContentDirectory, "sharetemp")
-			fFinalgz := gzip.NewWriter(fFinal)
+			fFinal, _ := ioutil.TempFile(ContentDirectory, "upload")
 			originalSize := int64(0)
 			for i := 1; i <= totalChunks; i++ {
 				// cat each chunk
@@ -247,7 +248,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 					log.Error(err)
 					return err
 				}
-				n, errCopy := io.Copy(fFinalgz, fh)
+				n, errCopy := io.Copy(fFinal, fh)
 				originalSize += n
 				if errCopy != nil {
 					log.Error(errCopy)
@@ -256,15 +257,16 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 				log.Debugf("removed %s", fh.Name())
 				os.Remove(fh.Name())
 			}
-			fFinalgz.Flush()
-			fFinalgz.Close()
 			fFinal.Close()
 			log.Debugf("final written to: %s", fFinal.Name())
-			fname, err = copyToContentDirectory(fname, fFinal.Name(), originalSize)
 
-			log.Debugf("setting uploadsHash: %s", fname)
+			// rename
+			logger.Debugf("renamed to %s", fFinal.Name()+fname)
+			os.Rename(fFinal.Name(), fFinal.Name()+fname)
+
+			log.Debugf("setting uploadsHash: %s", fFinal.Name()+fname)
 			uploadsHashLock.Lock()
-			uploadsHash[uuid] = fname
+			uploadsHash[uuid] = fFinal.Name() + fname
 			uploadsHashLock.Unlock()
 			return
 		}()
@@ -272,6 +274,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 	uploadsLock.Unlock()
 
 	if err != nil {
+		logger.Error(err)
 		jsonResponse(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
 		return nil
 	}
@@ -296,8 +299,8 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 
 	// TODO: cleanup if last one, delete uuid from uploadshash
-
-	jsonResponse(w, http.StatusCreated, map[string]string{"id": finalFname})
+	_, finalFname = filepath.Split(finalFname)
+	jsonResponse(w, http.StatusCreated, map[string]string{"id": fmt.Sprintf("http://localhost:8053/data/uploads/%s", finalFname)})
 	return
 }
 
@@ -420,6 +423,17 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 		return
 	}
 
+	// remove upload if upload
+	log.Debugf("u: %s", u)
+	if strings.Contains(u, "data/uploads/upload") {
+		errRemove := os.Remove(path.Join("data", "uploads", path.Base(uparsed.Path)))
+		if errRemove != nil {
+			log.Error(errRemove)
+		} else {
+			log.Debug("removed upload")
+		}
+	}
+
 	// generate patches
 	var segments [][]models.AudioSegment
 	if patchType == "drum" {
@@ -518,9 +532,21 @@ func CopyMax(dst io.Writer, src io.Reader, maxBytes int64) (n int64, err error) 
 	}
 
 	if n >= maxBytes {
-		err = fmt.Errorf("Upload exceeds maximum size (%s).", MaxBytesPerFileHuman)
+		err = fmt.Errorf("Upload exceeds maximum size (%d).", MaxBytesPerFile)
 	} else {
 		err = nil
 	}
 	return
+}
+
+// jsonResponse writes a JSON response and HTTP code
+func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json, err := json.Marshal(data)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debugf("json response: %s", json)
+	fmt.Fprintf(w, "%s\n", json)
 }
