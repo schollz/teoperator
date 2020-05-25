@@ -54,7 +54,7 @@ func Download(u string, fname string, byteLimit int64) (alternativeName string, 
 
 func download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
 	// download youtube
-	if strings.Contains(u, "youtube") {
+	if strings.Contains(u, "youtube") || strings.Contains(u, "instagram") {
 		return Youtube(u, fname)
 	}
 
