@@ -35,6 +35,7 @@
     <meta name="msapplication-TileColor" content="#4d4d4d;">
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <meta name="theme-color" content="#4d4d4d;">
+    <link rel="stylesheet" href="/static/css/dropzone.css">
     <style>
         @font-face {font-family: "Univers TE20 Thin";
     src: url("/static/font/1c6eb2519248229e6860a41985bf1827.eot"); /* IE9*/
@@ -250,7 +251,7 @@
       }
     
       input,
-      button, select {
+      button, select,.dropzone {
           background: #4d4d4d;
           border: 1px solid #b2b2b2;
           border-radius: 4px;
@@ -301,7 +302,7 @@
     img {
         max-width: 100%;
     }
-    input, select {
+    input, select,.dropzone {
   min-width: 60%;
   max-width:4em;
   overflow: hidden;
@@ -322,6 +323,17 @@
      }
      div#main-content { 
        padding-top: 70px;
+    }
+
+    .dropzone .dz-message {
+        margin: 0;
+    }
+
+    #preview {
+        font-size: 80%;
+    }
+    .dropzone {
+        min-height: auto;
     }
     </style>
 </head>
@@ -345,9 +357,18 @@
                 </strong>
             </p>
             <form action="/patch" method="get" class="pt1">
+
                 <div>
                     <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))" />
                     <label for="audioURL">url:</label>
+                </div>
+                <div>
+                    <div id="filesBox" class="dropzone dz-clickable">
+                        <div class="dz-message" data-dz-message=""><p style="font-size:80%; color: #b2b2b2;">Drop or click here to upload sound.<br>
+                        </p>
+                    </div>
+                    </div>
+                    <label for="filesBox">or upload:</label>
                 </div>
                 <div>
                     <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))" style="min-width: 30%;">
@@ -442,6 +463,87 @@
     });
     </script>
     <img src="/static/image/op1.png" width="70%" style="float:right; max-width: 900px;">
+
+
+    <script src="/static/js/dropzone.js"></script>
+    <script>
+    function humanFileSize(bytes, si) {
+        var thresh = si ? 1000 : 1024;
+        if (Math.abs(bytes) < thresh) {
+            return bytes + ' B';
+        }
+        var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        var u = -1;
+        do {
+            bytes /= thresh;
+            ++u;
+        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return bytes.toFixed(1) + ' ' + units[u];
+    }
+
+    var Name = "";
+    var filesize = 0;
+
+    (function(Dropzone) {
+        Dropzone.autoDiscover = false;
+
+        let drop = new Dropzone('div#filesBox', {
+            maxFiles: 1,
+            url: '/file',
+            method: 'post',
+            createImageThumbnails: false,
+            previewTemplate: "<div id='preview' class='.dropzone-previews'>#</div>",
+            chunking: true,
+            forceChunking: true,
+            parallelChunkUploads: true,
+            timeout: 3000000,
+            chunkSize: 2000000,
+        });
+
+        drop.on("uploadprogress", function(file, progress, bytesSent) {
+            progress = bytesSent / file.size * 100;
+            try {
+                var width = document.getElementById('preview').offsetWidth - 120;
+                var repeatTimes = Math.round(18*progress / 100);
+                document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
+                <p>&nbsp;${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
+
+            } catch (err) {}
+        });
+
+        //     drop.on('totaluploadprogress', function(progress) {
+  
+
+        drop.on('success', function(file, response) {
+            console.log("success");
+            console.log(response);
+            response = JSON.parse(file.xhr.response);
+            console.log(file);
+            console.log(response);
+            $("#audioURL").val(response.id);
+        });
+
+        drop.on('error', function(file, response) {
+            console.log('error');
+            console.log(response);
+            document.getElementById("errormessage").innerText = response.message;
+            
+            drop.removeAllFiles();
+        });
+
+        drop.on('addedfile', function(file) {
+            console.log(file);
+            Name = file.name;
+            filesize = file.size;
+            document.getElementById("preview").innerText = `${file.name} (${humanFileSize(file.size)})
+`;
+        })
+
+        drop.on('removedfile', function(file) {
+            console.log(file);
+        });
+    })(Dropzone);
+    </script>
 </body>
 
 </html>
