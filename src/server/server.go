@@ -1,10 +1,12 @@
 package server
 
 import (
+	"compress/gzip"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -29,7 +31,22 @@ import (
 	"github.com/schollz/teoperator/src/utils"
 )
 
+const MaxBytesPerFile = 100000000
+const ContentDirectory = "data"
+
+// uploads keep track of parallel chunking
+var uploadsHashLock sync.Mutex
+var uploadsLock sync.Mutex
+var uploadsHash map[string]string
+var uploadsInProgress map[string]int
+var uploadsFileNames map[string]string
+
 func Run(port int) (err error) {
+	// initialize chunking maps
+	uploadsInProgress = make(map[string]int)
+	uploadsFileNames = make(map[string]string)
+	uploadsHash = make(map[string]string)
+
 	os.Mkdir("data", os.ModePerm)
 	loadTemplates()
 	log.Infof("listening on :%d", port)
@@ -158,12 +175,129 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		http.Redirect(w, r, "/static/sitemap.xml", http.StatusFound)
 	} else if r.URL.Path == "/" {
 		return viewMain(w, r, "", "main")
+	} else if r.URL.Path == "/post" {
+		return handlePost(w, r)
 	} else if r.URL.Path == "/patch" {
 		return viewPatch(w, r)
 	} else {
 		t["main"].Execute(w, Render{})
 	}
 
+	return
+}
+
+func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
+	r.ParseMultipartForm(32 << 20)
+	file, handler, errForm := r.FormFile("file")
+	if errForm != nil {
+		err = errForm
+		log.Error(err)
+		return err
+	}
+	defer file.Close()
+	fname, _ := filepath.Abs(handler.Filename)
+	_, fname = filepath.Split(fname)
+
+	log.Debugf("%+v", r.Form)
+	chunkNum, _ := strconv.Atoi(r.FormValue("dzchunkindex"))
+	chunkNum++
+	totalChunks, _ := strconv.Atoi(r.FormValue("dztotalchunkcount"))
+	chunkSize, _ := strconv.Atoi(r.FormValue("dzchunksize"))
+	if int64(totalChunks)*int64(chunkSize) > MaxBytesPerFile {
+		err = fmt.Errorf("Upload exceeds max file size: %d.", MaxBytesPerFile)
+		log.Error(err)
+		return
+	}
+	uuid := r.FormValue("dzuuid")
+	log.Debugf("working on chunk %d/%d for %s", chunkNum, totalChunks, uuid)
+
+	f, err := ioutil.TempFile(ContentDirectory, "sharetemp")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	// remove temp file when finished
+	_, err = CopyMax(f, file, MaxBytesPerFile)
+	if err != nil {
+		log.Error(err)
+	}
+	f.Close()
+
+	// check if need to cat
+	uploadsLock.Lock()
+	if _, ok := uploadsInProgress[uuid]; !ok {
+		uploadsInProgress[uuid] = 0
+	}
+	uploadsInProgress[uuid]++
+	uploadsFileNames[fmt.Sprintf("%s%d", uuid, chunkNum)] = f.Name()
+	if uploadsInProgress[uuid] == totalChunks {
+		err = func() (err error) {
+			log.Debugf("upload finished for %s", uuid)
+			log.Debugf("%+v", uploadsFileNames)
+			delete(uploadsInProgress, uuid)
+
+			fFinal, _ := ioutil.TempFile(ContentDirectory, "sharetemp")
+			fFinalgz := gzip.NewWriter(fFinal)
+			originalSize := int64(0)
+			for i := 1; i <= totalChunks; i++ {
+				// cat each chunk
+				fh, err := os.Open(uploadsFileNames[fmt.Sprintf("%s%d", uuid, i)])
+				delete(uploadsFileNames, fmt.Sprintf("%s%d", uuid, i))
+				if err != nil {
+					log.Error(err)
+					return err
+				}
+				n, errCopy := io.Copy(fFinalgz, fh)
+				originalSize += n
+				if errCopy != nil {
+					log.Error(errCopy)
+				}
+				fh.Close()
+				log.Debugf("removed %s", fh.Name())
+				os.Remove(fh.Name())
+			}
+			fFinalgz.Flush()
+			fFinalgz.Close()
+			fFinal.Close()
+			log.Debugf("final written to: %s", fFinal.Name())
+			fname, err = copyToContentDirectory(fname, fFinal.Name(), originalSize)
+
+			log.Debugf("setting uploadsHash: %s", fname)
+			uploadsHashLock.Lock()
+			uploadsHash[uuid] = fname
+			uploadsHashLock.Unlock()
+			return
+		}()
+	}
+	uploadsLock.Unlock()
+
+	if err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"message": err.Error()})
+		return nil
+	}
+
+	// wait until all are finished
+	var finalFname string
+	startTime := time.Now()
+	for {
+		uploadsHashLock.Lock()
+		if _, ok := uploadsHash[uuid]; ok {
+			finalFname = uploadsHash[uuid]
+			log.Debugf("got uploadsHash: %s", finalFname)
+		}
+		uploadsHashLock.Unlock()
+		if finalFname != "" {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+		if time.Since(startTime).Seconds() > 60*60 {
+			break
+		}
+	}
+
+	// TODO: cleanup if last one, delete uuid from uploadshash
+
+	jsonResponse(w, http.StatusCreated, map[string]string{"id": finalFname})
 	return
 }
 
@@ -371,5 +505,22 @@ func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) 
 		logger.Errorf("audiowaveform: %s", out)
 	}
 
+	return
+}
+
+// CopyMax copies only the maxBytes and then returns an error if it
+// copies equal to or greater than maxBytes (meaning that it did not
+// complete the copy).
+func CopyMax(dst io.Writer, src io.Reader, maxBytes int64) (n int64, err error) {
+	n, err = io.CopyN(dst, src, maxBytes)
+	if err != nil && err != io.EOF {
+		return
+	}
+
+	if n >= maxBytes {
+		err = fmt.Errorf("Upload exceeds maximum size (%s).", MaxBytesPerFileHuman)
+	} else {
+		err = nil
+	}
 	return
 }
