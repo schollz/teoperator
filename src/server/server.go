@@ -39,8 +39,10 @@ var uploadsLock sync.Mutex
 var uploadsHash map[string]string
 var uploadsInProgress map[string]int
 var uploadsFileNames map[string]string
+var serverName string
 
-func Run(port int) (err error) {
+func Run(port int, sname string) (err error) {
+	serverName = sname
 	// initialize chunking maps
 	uploadsInProgress = make(map[string]int)
 	uploadsFileNames = make(map[string]string)
@@ -300,7 +302,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// TODO: cleanup if last one, delete uuid from uploadshash
 	_, finalFname = filepath.Split(finalFname)
-	jsonResponse(w, http.StatusCreated, map[string]string{"id": fmt.Sprintf("http://localhost:8053/data/uploads/%s", finalFname)})
+	jsonResponse(w, http.StatusCreated, map[string]string{"id": fmt.Sprintf("%s/data/uploads/%s", serverName, finalFname)})
 	return
 }
 
@@ -351,7 +353,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templateName string) (err error) {
 
 	t[templateName].Execute(w, Render{
-		Title:        "Pianos for Travelers",
+		Title:        "chop | make op-1 patches",
 		MessageError: messageError,
 	})
 	return

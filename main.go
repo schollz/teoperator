@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	var flagSynth, flagOut, flagDuct string
+	var flagSynth, flagOut, flagDuct, flagServerName string
 	var flagDebug, flagServer, flagWorker bool
 	var flagPort int
 	flag.BoolVar(&flagDebug, "debug", false, "debug mode")
@@ -26,6 +26,7 @@ func main() {
 	flag.StringVar(&flagSynth, "synth", "", "build synth patch from file")
 	flag.StringVar(&flagOut, "out", "", "name of new patch")
 	flag.StringVar(&flagDuct, "duct", "", "name of duct")
+	flag.StringVar(&flagServerName, "server", "http://localhost:8053", "name of external ip")
 	flag.Parse()
 
 	if flagDebug {
@@ -44,7 +45,7 @@ func main() {
 
 	var err error
 	if flagServer {
-		err = server.Run(flagPort)
+		err = server.Run(flagPort, flagServerName)
 	} else if flagSynth != "" {
 		_, fname := filepath.Split(flagSynth)
 		if flagOut == "" {
