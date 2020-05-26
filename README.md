@@ -1,18 +1,17 @@
 # teoperator
 
-I reverse-engineered the OP-1 drum patch so you can build your own drum patches from the OP-1. This repo is a [Go library](https://pkg.go.dev/github.com/schollz/teoperator/src/op1?tab=doc) and a server that you can chop up sounds that can build drum patches for the OP-1. For more info about it, check out [my blog post](https://schollz.com/blog/op1/). The server is currently hosted here: https://op1.schollz.com
 
-<strong>Examples:</strong> <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002">poetry from library of congress</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F6%2F68%2FTurdus_merula_male_song_at_dawn%252820s%2529.ogg&secondsStart=0&secondsEnd=30">black bird sounds</a>, <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2F7%2F70%2FTimpani_64-c-p5.wav&secondsStart=0&secondsEnd=0">sounds from a timpani</a>. <a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3D36CYMdFmDeQ&secondsStart=21.9&secondsEnd=60">spoken word from youtube.com</a>.
+This repo is a [Go library](https://pkg.go.dev/github.com/schollz/teoperator/src/op1?tab=doc) and a server that you can chop up sounds that can build synth and drum patches for the OP-1 or OP-Z. I went down a [rabbit hole to reverse-engineer the OP-1 drum patch](https://schollz.com/blog/op1/) and this was the end result. You can access the server at https://op1.schollz.com and you can build your own synth and drum patches from any sound.
+
 
 <p align="center">
-<a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002"><img src="/static/image/example.png"></a>
+<a href="https://op1.schollz.com/patch?audioURL=https%3A%2F%2Fcdn.loc.gov%2Fservice%2Fgdc%2Fgdcarpl%2Fgdcarpl-1624415%2F1624415.mp3&secondsStart=982&secondsEnd=1002"><img src="/static/image/example2.png"></a>
 </p>
 
 
 ## Install
 
-
-First install the pre-requisite programs. Instructions for both Windows and Linux.
+You can follow these instructions to download this repo and run it locally. First install the pre-requisite programs. Instructions for both Windows and Linux.
 
 #### Linux
 
@@ -27,11 +26,11 @@ $ sudo -H python3 -m pip install youtube-dl
 #### Windows
 
 ```
-go get github.com/schollz/zget
-zget https://github.com/wincentbalin/compile-static-audiowaveform/releases/download/1.2.2/audiowaveform-mingw64.zip
-unzip audiowaveform-mingw64.zip 
-mv audiowaveform to path
-scoop install ffmpeg imagemagick youtube-dl
+$ go get github.com/schollz/zget
+$ zget https://github.com/wincentbalin/compile-static-audiowaveform/releases/download/1.2.2/audiowaveform-mingw64.zip
+$ unzip audiowaveform-mingw64.zip 
+$ mv audiowaveform to path
+$ scoop install ffmpeg imagemagick youtube-dl
 ```
 
 ### Build and run
