@@ -67,7 +67,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 		viewMain(w, r, err.Error(), "main")
 	}
-	log.Infof("%v %v %v %s\n", r.RemoteAddr, r.Method, r.URL.Path, time.Since(t))
+	log.Infof("%v %v %v (%s) %s\n", r.RemoteAddr, r.Method, r.URL.Path, r.Header.Get("Accept-Language"), time.Since(t))
 }
 
 type Href struct {
