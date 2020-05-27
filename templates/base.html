@@ -2,20 +2,20 @@
 <html>
 
 <head>
-    <title>chop | make op-1 patches</title>
+    <title>chop | make synth patches</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="title" content="chop | make op-1 patches">
-    <meta name="description" content="create drum patches for the teenage engineering op-1 synthesizer from any sound on the internet.">
+    <meta name="title" content="chop | make patches">
+    <meta name="description" content="Create drum and synth patches for the teenage engineering op-1 and op-z synthesizer from any sound on the internet.">
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://op1.schollz.com">
-    <meta property="og:title" content="chop | make op-1 patches">
-    <meta property="og:description" content="create drum patches for the teenage engineering op-1 synthesizer from any sound on the internet.">
+    <meta property="og:title" content="chop | make synth patches">
+    <meta property="og:description" content="Create drum and synth patches for the teenage engineering op-1 and op-z synthesizer from any sound on the internet.">
     <meta property="og:image" content="/static/image/example.png">
     <!-- Twitter -->
     <meta property="twitter:card" content="/static/image/example.png">
     <meta property="twitter:url" content="https://op1.schollz.com">
-    <meta property="twitter:title" content="chop | make op-1 patches">
+    <meta property="twitter:title" content="chop | make synth patches">
     <meta property="twitter:description" content="create drum and synth patches for the teenage engineering op-1 synthesizer from any sound on the internet.">
     <meta property="twitter:image" content="/static/image/example.png">
     <link rel="apple-touch-icon" sizes="57x57" href="/static/image/favicon/apple-icon-57x57.png">
@@ -349,11 +349,11 @@
             <legend>
                 <pre style="float:right; text-align: right;">
 
-   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.2em;">op-1</strong></span></a> v1.1.0β
+   </pre><a href="/"><span style="font-size:1.5em">ch<strong style="font-size: 1.2em;">op</strong></span></a> v1.1.0β
             </legend>
             <p class="pt1">
                 <strong>
-                    turn any sound into a drum or synth patch for the teenage engineering op-1.
+                    turn any sound into a drum or synth patch for the teenage engineering op-1 or op-z.
                 </strong>
             </p>
             <form action="/patch" method="get" class="pt1">
@@ -401,7 +401,7 @@
             (( end ))
             (( if .Metadata.UUID ))
             <div class="pt1">
-                <p><span style="font-size:140%; font-weight:900;">((if $.Metadata.IsSynthPatch))synth patch((else))drum patches((end))</span> generated from <a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>. click the waveform to listen and download the op-1 ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the op-1 marks are generated.((end))
+                <p><span style="font-size:140%; font-weight:900;">((if $.Metadata.IsSynthPatch))synth patch((else))drum patches((end))</span> generated from <a href="(($.Metadata.OriginalURL))">((urlbase $.Metadata.Name ))</a>. click the waveform to listen and download the ((if .Metadata.IsSynthPatch))synth patch.((else))drum patch. the varying colors indicate how the keys are assigned to each sound.((end))
                 </p>
             </div>
             <div style="padding:1em; border: 2px solid #FFFFFF; margin-top:1em;">
