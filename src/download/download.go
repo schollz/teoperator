@@ -17,6 +17,7 @@ import (
 )
 
 var Duct = ""
+var ServerName = "alsdkjflkasjdlfajsld"
 
 // PassThru wraps an existing io.Reader.
 //
@@ -46,7 +47,7 @@ func (pt *PassThru) Read(p []byte) (int, error) {
 // Download a file and limit the number of bytes. If the bytes exceed,
 // it will throw an error and delete the downloaded file.
 func Download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
-	if Duct != "" {
+	if Duct != "" && !strings.Contains(u, ServerName) {
 		return DownloadFromDuct(u, fname)
 	}
 	return download(u, fname, byteLimit)

@@ -36,6 +36,7 @@ func main() {
 	}
 
 	download.Duct = flagDuct
+	download.ServerName = flagServerName
 
 	if !ffmpeg.IsInstalled() {
 		fmt.Println("ffmpeg not installed")
