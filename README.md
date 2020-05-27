@@ -1,7 +1,7 @@
 # teoperator
 
 
-This repo is a [Go library](https://pkg.go.dev/github.com/schollz/teoperator/src/op1?tab=doc) and a server that you can chop up sounds that can build synth and drum patches for the OP-1 or OP-Z. I went down a [rabbit hole to reverse-engineer the OP-1 drum patch](https://schollz.com/blog/op1/) and this was the end result. You can access the server at https://op1.schollz.com and you can build your own synth and drum patches from any sound.
+This repo is a [Go library](https://pkg.go.dev/github.com/schollz/teoperator/src/op1?tab=doc) and a server that you can chop up sounds that can build synth and drum patches for the OP-1 or OP-Z. I went down a [rabbit hole to reverse-engineer the OP-1 drum patch](https://schollz.com/blog/op1/) and this was the end result. You can access the server at https://op1z.com and you can build your own synth and drum patches from any sound.
 
 
 <p align="center">
