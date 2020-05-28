@@ -160,7 +160,10 @@ func DownloadFromDuct(u string, fname string) (alternativeName string, err error
 
 func Work() (err error) {
 	for {
-		dowork()
+		err = dowork()
+		if err != nil {
+			time.Sleep(1*time.Second)
+		}
 	}
 	return
 }
