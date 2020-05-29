@@ -335,10 +335,86 @@
     .dropzone {
         min-height: auto;
     }
+
+    .loading-gif {
+position: absolute;
+width:100%;
+height:100%;
+padding:8em;
+background: #4d4d4d;
+text-align: center;
+display:none;
+}
+
+.lds-ellipsis {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 33px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+
     </style>
 </head>
 
 <body style="">
+    <div class="loading-gif">
+        <p>processing (this may take a minute)...</p>
+        <div class="lds-ellipsis">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
     <div id="banner">
         <div id="banner-content">
             note: this is β software, <a href="https://github.com/schollz/teoperator/issues/new?labels=bug&title=New+bug+report" style="color: #137752   ;">click</a> to report 🐛
@@ -356,7 +432,7 @@
                     turn any sound into a drum or synth patch for the teenage engineering op-1 or op-z.
                 </strong>
             </p>
-            <form action="/patch" method="get" class="pt1">
+            <form id="patchform" action="/patch" method="get" class="pt1">
                 <div>
                     <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))" />
                     <label for="audioURL">url:</label>
@@ -467,6 +543,11 @@
                 $("#a" + e.currentTarget.id).fadeToggle("fast", "swing");
             },
         );
+
+        $('#patchform').submit(function(e) {
+            $(".loading-gif").fadeIn("slow");
+            return true;
+        });
     });
     </script>
     <img src="/static/image/op1.png" width="70%" style="float:right; max-width: 900px;">
