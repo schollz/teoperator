@@ -25,6 +25,7 @@ import (
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/audiosegment"
 	"github.com/schollz/teoperator/src/download"
+	"github.com/schollz/teoperator/src/ffmpeg"
 	"github.com/schollz/teoperator/src/models"
 	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
@@ -77,13 +78,14 @@ type Href struct {
 }
 
 type Metadata struct {
-	Name         string
-	UUID         string
-	OriginalURL  string
-	Files        []FileData
-	Start        float64
-	Stop         float64
-	IsSynthPatch bool
+	Name          string
+	UUID          string
+	OriginalURL   string
+	Files         []FileData
+	Start         float64
+	Stop          float64
+	IsSynthPatch  bool
+	RemoveSilence bool
 }
 
 type FileData struct {
@@ -311,10 +313,16 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	secondsStart, _ := r.URL.Query()["secondsStart"]
 	secondsEnd, _ := r.URL.Query()["secondsEnd"]
 	patchtypeA, _ := r.URL.Query()["synthPatch"]
+	removeSilenceA, _ := r.URL.Query()["removeSilence"]
 	patchtype := "drum"
+	removeSilence := false
 	if len(patchtypeA) > 0 && (patchtypeA[0] == "synth" || patchtypeA[0] == "on") {
 		patchtype = "synth"
 	}
+	if len(removeSilenceA) > 0 && removeSilenceA[0] == "yes" {
+		removeSilence = true
+	}
+	log.Debugf("removeSilence: %+v", removeSilence)
 
 	if len(audioURL[0]) == 0 {
 		err = fmt.Errorf("no URL")
@@ -329,7 +337,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
 
-	uuid, err := generateUserData(audioURL[0], startStop, patchtype)
+	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence)
 	if err != nil {
 		return
 	}
@@ -359,7 +367,7 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-func generateUserData(u string, startStop []float64, patchType string) (uuid string, err error) {
+func generateUserData(u string, startStop []float64, patchType string, removeSilence bool) (uuid string, err error) {
 	log.Debug(u, startStop)
 	log.Debug(patchType)
 	if startStop[1]-startStop[0] < 12 {
@@ -369,7 +377,7 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 		startStop[1] = startStop[0] + 5.75
 	}
 
-	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v", u, startStop))))
+	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v", u, startStop, removeSilence))))
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
@@ -413,6 +421,21 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 	shortName := fmt.Sprintf("%x%s", md5.Sum([]byte(u+fmt.Sprintf("%+v", startStop))), filepath.Ext(fname))
 	shortName = shortName[:6]
 	shortName = path.Join(folder0, shortName+filepath.Ext(fname))
+
+	if removeSilence {
+		err = os.Rename(fnameID, shortName)
+		if err != nil {
+			return
+		}
+		err = ffmpeg.RemoveSilence(shortName, fnameID)
+		if err != nil {
+			return
+		}
+		err = os.Remove(shortName)
+		if err != nil {
+			return
+		}
+	}
 
 	// // copy file into folder
 	// _, err = utils.CopyFile(fnameID, fname)
@@ -468,13 +491,14 @@ func generateUserData(u string, startStop []float64, patchType string) (uuid str
 		fname = alternativeName
 	}
 	b, _ := json.Marshal(Metadata{
-		Name:         fname,
-		UUID:         uuid,
-		OriginalURL:  u,
-		Files:        files,
-		Start:        startStop[0],
-		Stop:         startStop[1],
-		IsSynthPatch: patchType == "synth",
+		Name:          fname,
+		UUID:          uuid,
+		OriginalURL:   u,
+		Files:         files,
+		Start:         startStop[0],
+		Stop:          startStop[1],
+		IsSynthPatch:  patchType == "synth",
+		RemoveSilence: removeSilence,
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 

@@ -375,7 +375,14 @@
                     <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))" style="min-width: 30%;">
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
+
                 <div>
+                    <select name="removeSilence" id="removeSilence" style="text-align: center;">
+                        <option value="no">no</option>
+                        <option value="yes" ((if $.Metadata.RemoveSilence))selected((end))>yes</option>
+                    </select>
+                    <label for="removeSilence">remove silence?</label>
+                </div>                <div>
                     <select name="synthPatch" id="synthPatch" style="text-align: center;">
                         <option value="drum">drum</option>
                         <option value="synth" ((if $.Metadata.IsSynthPatch))selected((end))>synth</option>

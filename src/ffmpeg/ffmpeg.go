@@ -161,3 +161,15 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, 
 	newSegments = newSegments[:i]
 	return newSegments, nil
 }
+
+func RemoveSilence(fnameIn, fnameOut string) (err error) {
+	cmd := fmt.Sprintf("-i %s -af silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB -y %s", fnameIn, fnameOut)
+	logger.Debug(cmd)
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		return
+	}
+	logger.Debugf("ffmpeg output: %s", out)
+
+	return
+}
