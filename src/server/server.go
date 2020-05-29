@@ -422,21 +422,6 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	shortName = shortName[:6]
 	shortName = path.Join(folder0, shortName+filepath.Ext(fname))
 
-	if removeSilence {
-		err = os.Rename(fnameID, shortName)
-		if err != nil {
-			return
-		}
-		err = ffmpeg.RemoveSilence(shortName, fnameID)
-		if err != nil {
-			return
-		}
-		err = os.Remove(shortName)
-		if err != nil {
-			return
-		}
-	}
-
 	// // copy file into folder
 	// _, err = utils.CopyFile(fnameID, fname)
 	// if err != nil {
@@ -445,7 +430,27 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	// truncate into folder
 	err = audiosegment.Truncate(fnameID, shortName, utils.SecondsToString(startStop[0]), utils.SecondsToString(startStop[1]))
 	if err != nil {
+		log.Error(err)
 		return
+	}
+
+	if removeSilence {
+		log.Debug("removing silence")
+		err = os.Rename(shortName, shortName+".mp3")
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		err = ffmpeg.RemoveSilence(shortName+".mp3", shortName)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		err = os.Remove(shortName + ".mp3")
+		if err != nil {
+			log.Error(err)
+			return
+		}
 	}
 
 	// remove upload if upload

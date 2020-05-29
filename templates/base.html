@@ -349,7 +349,7 @@
             <legend>
                 <pre style="float:right; text-align: right;">
 
-   </pre><a href="/"><span style="font-size:1.5em"><strong style="font-size: 1.2em;">op1z</strong></span></a> v1.2.0β
+   </pre><a href="/"><span style="font-size:1.5em"><strong style="font-size: 1.2em;">op1z</strong></span></a> v1.2.1β
             </legend>
             <p class="pt1">
                 <strong>
@@ -357,16 +357,16 @@
                 </strong>
             </p>
             <form action="/patch" method="get" class="pt1">
-
                 <div>
                     <input id="audioURL" name="audioURL" type="text" value="((if .Metadata))((.Metadata.OriginalURL))((end))" />
                     <label for="audioURL">url:</label>
                 </div>
                 <div>
                     <div id="filesBox" class="dropzone dz-clickable">
-                        <div class="dz-message" data-dz-message=""><p style="font-size:80%; color: #b2b2b2;">Drop or click here to upload sound.<br>
-                        </p>
-                    </div>
+                        <div class="dz-message" data-dz-message="">
+                            <p style="font-size:80%; color: #b2b2b2;">Drop or click here to upload sound.<br>
+                            </p>
+                        </div>
                     </div>
                     <label for="filesBox">or upload:</label>
                 </div>
@@ -375,14 +375,14 @@
                     <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))" style="min-width: 30%;">
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
-
                 <div>
                     <select name="removeSilence" id="removeSilence" style="text-align: center;">
                         <option value="no">no</option>
                         <option value="yes" ((if $.Metadata.RemoveSilence))selected((end))>yes</option>
                     </select>
                     <label for="removeSilence">remove silence?</label>
-                </div>                <div>
+                </div>
+                <div>
                     <select name="synthPatch" id="synthPatch" style="text-align: center;">
                         <option value="drum">drum</option>
                         <option value="synth" ((if $.Metadata.IsSynthPatch))selected((end))>synth</option>
@@ -470,8 +470,6 @@
     });
     </script>
     <img src="/static/image/op1.png" width="70%" style="float:right; max-width: 900px;">
-
-
     <script src="/static/js/dropzone.js"></script>
     <script>
     function humanFileSize(bytes, si) {
@@ -511,7 +509,7 @@
             progress = bytesSent / file.size * 100;
             try {
                 var width = document.getElementById('preview').offsetWidth - 120;
-                var repeatTimes = Math.round(18*progress / 100);
+                var repeatTimes = Math.round(18 * progress / 100);
                 document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
                 <p>&nbsp;${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
 
@@ -519,7 +517,7 @@
         });
 
         //     drop.on('totaluploadprogress', function(progress) {
-  
+
 
         drop.on('success', function(file, response) {
             console.log("success");
@@ -534,7 +532,7 @@
             console.log('error');
             console.log(response);
             document.getElementById("errormessage").innerText = response.message;
-            
+
             drop.removeAllFiles();
         });
 
@@ -551,17 +549,16 @@
         });
     })(Dropzone);
     </script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-76290446-2"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
 
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-76290446-2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'UA-76290446-2');
-</script>
-
+    gtag('config', 'UA-76290446-2');
+    </script>
 </body>
 
 </html>
