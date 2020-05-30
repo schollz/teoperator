@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -42,7 +43,22 @@ var uploadsInProgress map[string]int
 var uploadsFileNames map[string]string
 var serverName string
 
+var rootNoteToFrequency = map[string]float64{
+	"B":  math.Pow(2.0, ((59.0-69.0)/12.0)) * 440.0,
+	"C":  math.Pow(2.0, ((60.0-69.0)/12.0)) * 440.0,
+	"C#": math.Pow(2.0, ((61.0-69.0)/12.0)) * 440.0,
+	"D":  math.Pow(2.0, ((62.0-69.0)/12.0)) * 440.0,
+	"D#": math.Pow(2.0, ((63.0-69.0)/12.0)) * 440.0,
+	"E":  math.Pow(2.0, ((64.0-69.0)/12.0)) * 440.0,
+	"F":  math.Pow(2.0, ((65.0-69.0)/12.0)) * 440.0,
+	"F#": math.Pow(2.0, ((66.0-69.0)/12.0)) * 440.0,
+	"G":  math.Pow(2.0, ((67.0-69.0)/12.0)) * 440.0,
+	"G#": math.Pow(2.0, ((68.0-69.0)/12.0)) * 440.0,
+	"A":  math.Pow(2.0, ((69.0-69.0)/12.0)) * 440.0,
+}
+
 func Run(port int, sname string) (err error) {
+	fmt.Println(rootNoteToFrequency)
 	serverName = sname
 	// initialize chunking maps
 	uploadsInProgress = make(map[string]int)
@@ -86,6 +102,7 @@ type Metadata struct {
 	Stop          float64
 	IsSynthPatch  bool
 	RemoveSilence bool
+	RootNote      string
 }
 
 type FileData struct {
@@ -314,13 +331,20 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	secondsEnd, _ := r.URL.Query()["secondsEnd"]
 	patchtypeA, _ := r.URL.Query()["synthPatch"]
 	removeSilenceA, _ := r.URL.Query()["removeSilence"]
+	rootNoteA, _ := r.URL.Query()["rootNote"]
 	patchtype := "drum"
 	removeSilence := false
+	rootNote := "A"
 	if len(patchtypeA) > 0 && (patchtypeA[0] == "synth" || patchtypeA[0] == "on") {
 		patchtype = "synth"
 	}
 	if len(removeSilenceA) > 0 && removeSilenceA[0] == "yes" {
 		removeSilence = true
+	}
+	if len(rootNoteA) > 0 {
+		if _, ok := rootNoteToFrequency[rootNoteA[0]]; ok {
+			rootNote = rootNoteA[0]
+		}
 	}
 	log.Debugf("removeSilence: %+v", removeSilence)
 
@@ -337,7 +361,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
 
-	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence)
+	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote)
 	if err != nil {
 		return
 	}
@@ -367,7 +391,7 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-func generateUserData(u string, startStop []float64, patchType string, removeSilence bool) (uuid string, err error) {
+func generateUserData(u string, startStop []float64, patchType string, removeSilence bool, rootNote string) (uuid string, err error) {
 	log.Debug(u, startStop)
 	log.Debug(patchType)
 	if startStop[1]-startStop[0] < 12 {
@@ -377,7 +401,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		startStop[1] = startStop[0] + 5.75
 	}
 
-	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v", u, startStop, removeSilence))))
+	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v %+v %+v", patchType, u, startStop, removeSilence, rootNote))))
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
@@ -472,7 +496,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 			return
 		}
 	} else {
-		segments, err = makeSynthPatch(shortName)
+		segments, err = makeSynthPatch(shortName, rootNoteToFrequency[rootNote])
 		if err != nil {
 			return
 		}
@@ -504,14 +528,15 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		Stop:          startStop[1],
 		IsSynthPatch:  patchType == "synth",
 		RemoveSilence: removeSilence,
+		RootNote:      rootNote,
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
 	return
 }
 
-func makeSynthPatch(fname string) (segments [][]models.AudioSegment, err error) {
-	sp := op1.NewSynthSamplePatch()
+func makeSynthPatch(fname string, rootFrequency float64) (segments [][]models.AudioSegment, err error) {
+	sp := op1.NewSynthSamplePatch(rootFrequency)
 	basefolder, basefname := filepath.Split(fname)
 	sp.Name = strings.Split(basefname, ".")[0]
 	fnameout := path.Join(basefolder, strings.Split(basefname, ".")[0]+".aif")

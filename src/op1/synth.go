@@ -30,7 +30,23 @@ func init() {
 		panic(err)
 	}
 
-	b = []byte(`{"adsr":[64,10746,32767,10000,4000,64,4000,4000],"base_freq":440.0,"fx_active":false,"fx_params":[8000,8000,8000,8000,8000,8000,8000,8000],"fx_type":"delay","knobs":[0,19361,27626,32767,12000,0,0,8192],"lfo_active":false,"lfo_params":[16000,0,0,16000,0,0,0,0],"lfo_type":"tremolo","name":"20911115_1948","octave":0,"synth_version":2,"type":"sampler"}`)
+	b = []byte(`{"adsr":[64,10746,32767,10000,4000,64,4000,4000],"base_freq":440.0,"fx_active":false,"fx_params":[8000,8000,8000,8000,8000,8000,8000,8000],"fx_type":"delay","knobs":[0,19361,27626,32767,12000,0,0,8192],"lfo_active":false,"lfo_params":[16000,0,0,16000,0,0,0,0],"lfo_type":"tremolo","name":"20911115_1948","octave":0,"synth_version":1,"type":"sampler"}`)
+	b = []byte(`{
+"adsr":[512,10746,32767,10000,4000,64,4000,4000],
+"base_freq":261.6253662109375,
+"fx_active":false,
+"fx_params":[4480,15544,10788,12104,0,0,0,0],
+"fx_type":"delay",
+"knobs":[0,0,32767,32767,12000,0,0,8304],
+"lfo_active":false,
+"lfo_params":[11840,18431,1024,15144,0,0,0,0],
+"lfo_type":"random",
+"name":"20150108_0251",
+"octave":0,
+"synth_version":1,
+"type":"sampler"
+}
+`)
 	err = json.Unmarshal(b, &defaultSynthPatchSampler)
 	if err != nil {
 		panic(err)
@@ -39,18 +55,19 @@ func init() {
 }
 
 type SynthPatch struct {
-	Adsr         [8]int `json:"adsr"`
-	FxActive     bool   `json:"fx_active"`
-	FxParams     [8]int `json:"fx_params"`
-	FxType       string `json:"fx_type"`
-	Knobs        [8]int `json:"knobs"`
-	LfoActive    bool   `json:"lfo_active"`
-	LfoParams    [8]int `json:"lfo_params"`
-	LfoType      string `json:"lfo_type"`
-	Name         string `json:"name"`
-	Octave       int    `json:"octave"`
-	SynthVersion int    `json:"synth_version"`
-	Type         string `json:"type"`
+	Adsr         [8]int  `json:"adsr"`
+	FxActive     bool    `json:"fx_active"`
+	FxParams     [8]int  `json:"fx_params"`
+	FxType       string  `json:"fx_type"`
+	Knobs        [8]int  `json:"knobs"`
+	LfoActive    bool    `json:"lfo_active"`
+	LfoParams    [8]int  `json:"lfo_params"`
+	LfoType      string  `json:"lfo_type"`
+	Name         string  `json:"name"`
+	Octave       int     `json:"octave"`
+	SynthVersion int     `json:"synth_version"`
+	Type         string  `json:"type"`
+	BaseFreq     float64 `json:"base_freq,omitempty"`
 }
 
 // ADSR parameters
@@ -194,8 +211,12 @@ func NewSynthPatch() (sd SynthPatch) {
 	return defaultSynthPatch
 }
 
-func NewSynthSamplePatch() (sd SynthPatch) {
-	return defaultSynthPatchSampler
+func NewSynthSamplePatch(freq ...float64) (sd SynthPatch) {
+	sd = defaultSynthPatchSampler
+	if len(freq) > 0 {
+		sd.BaseFreq = freq[0]
+	}
+	return
 }
 
 func RandomSynthPatch(seed ...int64) (sd SynthPatch) {

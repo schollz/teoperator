@@ -425,7 +425,7 @@ display:none;
             <legend>
                 <pre style="float:right; text-align: right;">
 
-   </pre><a href="/"><span style="font-size:1.5em"><strong style="font-size: 1.2em;">op1z</strong></span></a> v1.2.1β
+   </pre><a href="/"><span style="font-size:1.5em"><strong style="font-size: 1.2em;">op1z</strong></span></a> v1.3.0β
             </legend>
             <p class="pt1">
                 <strong>
@@ -452,18 +452,36 @@ display:none;
                     <label for="secondsStart">start/end<br>(in seconds):</label>
                 </div>
                 <div>
+                    <select name="synthPatch" id="synthPatch" style="text-align: center;">
+                        <option value="drum">drum</option>
+                        <option value="synth" ((if $.Metadata.IsSynthPatch))selected((end))>synth</option>
+                    </select>
+                    <label for="synthPatch">patch type:</label>
+                </div>
+                <div id="optionRemoveSilence" ((if $.Metadata.IsSynthPatch))style="display:none;"((end))>
                     <select name="removeSilence" id="removeSilence" style="text-align: center;">
                         <option value="no">no</option>
                         <option value="yes" ((if $.Metadata.RemoveSilence))selected((end))>yes</option>
                     </select>
                     <label for="removeSilence">remove silence?</label>
                 </div>
-                <div>
-                    <select name="synthPatch" id="synthPatch" style="text-align: center;">
-                        <option value="drum">drum</option>
-                        <option value="synth" ((if $.Metadata.IsSynthPatch))selected((end))>synth</option>
+                <div id="optionRootNote" ((if $.Metadata.IsSynthPatch))((else))style="display:none;"((end))>
+                    <select name="rootNote" id="rootNote" style="text-align: center;">
+                        <option value="A"  ((if eq $.Metadata.RootNote "A"))selected((end))>A</option>
+                        <option value="A#"  ((if eq $.Metadata.RootNote "A#"))selected((end))>A#</option>
+                        <option value="B" ((if eq $.Metadata.RootNote "B"))selected((end))>B</option>
+                        <option value="C" ((if eq $.Metadata.RootNote "C"))selected((end))>C</option>
+                        <option value="C#" ((if eq $.Metadata.RootNote "C#"))selected((end))>C#</option>
+                        <option value="D" ((if eq $.Metadata.RootNote "D"))selected((end))>D</option>
+                        <option value="D#" ((if eq $.Metadata.RootNote "D#"))selected((end))>D#</option>
+                        <option value="E" ((if eq $.Metadata.RootNote "E"))selected((end))>E</option>
+                        <option value="F" ((if eq $.Metadata.RootNote "F"))selected((end))>F</option>
+                        <option value="F#" ((if eq $.Metadata.RootNote "F#"))selected((end))>F#</option>
+                        <option value="G" ((if eq $.Metadata.RootNote "G"))selected((end))>G</option>
+                        <option value="G#" ((if eq $.Metadata.RootNote "G#"))selected((end))>G#</option>
                     </select>
-                    <label for="synthPatch">patch type:</label>
+                    <label for="rootNote">root note:                     	
+                    </label>
                 </div>
                 <div>
                     <button class="button" type="submit" style="max-width:4em;  min-width: 60%; font-size: 100%;">chop it up!</button>
@@ -548,6 +566,17 @@ display:none;
             $(".loading-gif").fadeIn("slow");
             return true;
         });
+
+        $('#synthPatch').change(function(e){
+        	console.log(e.target.value);
+        	if (e.target.value == "drum") {
+        		$("#optionRemoveSilence").show();
+        		$("#optionRootNote").hide();        		
+        	} else {
+        		$("#optionRemoveSilence").hide();        		
+        		$("#optionRootNote").show();        		
+        	}
+        })
     });
     </script>
     <img src="/static/image/op1.png" width="70%" style="float:right; max-width: 900px;">
