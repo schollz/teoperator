@@ -44,6 +44,7 @@ var uploadsFileNames map[string]string
 var serverName string
 
 var rootNoteToFrequency = map[string]float64{
+	"A#": math.Pow(2.0, ((58.0-69.0)/12.0)) * 440.0,
 	"B":  math.Pow(2.0, ((59.0-69.0)/12.0)) * 440.0,
 	"C":  math.Pow(2.0, ((60.0-69.0)/12.0)) * 440.0,
 	"C#": math.Pow(2.0, ((61.0-69.0)/12.0)) * 440.0,
