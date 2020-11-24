@@ -55,7 +55,7 @@ func Download(u string, fname string, byteLimit int64) (alternativeName string, 
 
 func download(u string, fname string, byteLimit int64) (alternativeName string, err error) {
 	// download youtube
-	if strings.Contains(u, "youtube") || strings.Contains(u, "instagram") || strings.Contains(u,"soundcloud") {
+	if strings.Contains(u, "youtube") || strings.Contains(u, "instagram") || strings.Contains(u, "soundcloud") {
 		return Youtube(u, fname)
 	}
 
@@ -98,11 +98,11 @@ func Youtube(u string, fname string) (alternativeName string, err error) {
 	}
 	destFile := ""
 	for _, line := range strings.Split(string(out), "\n") {
-		if !strings.HasPrefix(line, "[ffmpeg] Destination") {
+		if !strings.Contains(line, "Destination:") {
 			continue
 		}
-		foo := strings.TrimPrefix(line, "[ffmpeg] Destination:")
-		destFile = strings.TrimSpace(foo)
+		foo := strings.Split(line, "Destination:")
+		destFile = strings.TrimSpace(foo[1])
 		break
 	}
 	if destFile == "" {
@@ -162,7 +162,7 @@ func Work() (err error) {
 	for {
 		err = dowork()
 		if err != nil {
-			time.Sleep(1*time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}
 	return
