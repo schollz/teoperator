@@ -103,7 +103,6 @@ func Youtube(u string, fname string) (alternativeName string, err error) {
 		}
 		foo := strings.Split(line, "Destination:")
 		destFile = strings.TrimSpace(foo[1])
-		break
 	}
 	if destFile == "" {
 		err = fmt.Errorf("no dest file")
