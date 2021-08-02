@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,6 +13,7 @@ import (
 	"github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/models"
 	"github.com/schollz/teoperator/src/utils"
+	wav "github.com/youpy/go-wav"
 )
 
 // IsInstalled checks whether ffmpeg is installed
@@ -22,6 +25,62 @@ func IsInstalled() bool {
 		return false
 	}
 	return true
+}
+
+func NumSamples(fname string) (numSamples int64, err error) {
+	file, err := os.Open(fname)
+	if err != nil {
+		return
+	}
+	reader := wav.NewReader(file)
+
+	defer file.Close()
+
+	for {
+		samples, err := reader.ReadSamples()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+
+		numSamples += int64(len(samples))
+	}
+	return
+}
+
+func Concatenate(fnames []string) (fname2 string, err error) {
+	f, err := ioutil.TempFile(".", "concat")
+	defer os.Remove(f.Name())
+	for _, fname := range fnames {
+		f.WriteString(fmt.Sprintf("file '%s'\n", fname))
+	}
+	f.Close()
+	fname2 = fnames[0] + "concat.wav"
+	cmd := fmt.Sprintf("-y -f concat -i %s %s",
+		f.Name(),
+		fname2,
+	)
+	logger.Debug(cmd)
+	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func ToMono(fname string) (fname2 string, err error) {
+	fname2 = fname + ".mono.wav"
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100 -ac 1 %s",
+		fname,
+		fname2,
+	)
+	logger.Debug(cmd)
+	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	if err != nil {
+		return
+	}
+	return
 }
 
 type Normalization struct {

@@ -4,39 +4,34 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	log "github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/convert"
 	"github.com/schollz/teoperator/src/download"
 	"github.com/schollz/teoperator/src/ffmpeg"
-	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/server"
 )
 
 func main() {
 	var flagSynth, flagOut, flagDuct, flagServerName string
-	var flagDebug, flagServer, flagWorker bool
+	var flagDebug, flagServer, flagWorker, flagDrum bool
 	var flagPort int
+	var flagFreq float64
 	flag.BoolVar(&flagDebug, "debug", false, "debug mode")
+	flag.BoolVar(&flagDrum, "drum", false, "build drum patch")
 	flag.BoolVar(&flagServer, "serve", false, "make a server")
 	flag.BoolVar(&flagWorker, "work", false, "start a download worker")
-	flag.IntVar(&flagPort, "port", 8053, "port to use")
+	flag.IntVar(&flagPort, "freq", 440, "base frequency when generating synth patch")
+	flag.Float64Var(&flagFreq, "port", 8053, "port to use")
 	flag.StringVar(&flagSynth, "synth", "", "build synth patch from file")
 	flag.StringVar(&flagOut, "out", "", "name of new patch")
 	flag.StringVar(&flagDuct, "duct", "", "name of duct")
 	flag.StringVar(&flagServerName, "server", "http://localhost:8053", "name of external ip")
 	flag.Parse()
 
-	if flagDebug {
-		log.SetLevel("debug")
-	} else {
-		log.SetLevel("info")
-	}
-
 	download.Duct = flagDuct
 	download.ServerName = flagServerName
+	log.SetLevel("error")
 
 	if !ffmpeg.IsInstalled() {
 		fmt.Println("ffmpeg not installed")
@@ -44,20 +39,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	if flagDebug {
+		log.SetLevel("debug")
+	} else {
+		log.SetLevel("info")
+	}
+
 	var err error
 	if flagServer {
 		err = server.Run(flagPort, flagServerName)
 	} else if flagSynth != "" {
-		_, fname := filepath.Split(flagSynth)
-		if flagOut == "" {
-			flagOut = strings.Split(fname, ".")[0] + ".op1.aif"
-		}
-		st := time.Now()
-		sp := op1.NewSynthPatch()
-		err = sp.SaveSample(flagSynth, flagOut, true)
-		if err == nil {
-			fmt.Printf("converted '%s' to op-1 synth patch '%s' in %s\n", fname, flagOut, time.Since(st))
-		}
+		err = convert.ToSynth(flagSynth, flagFreq)
+	} else if flagDrum {
+		err = convert.ToDrum(flag.Args())
 	} else if flagWorker {
 		err = download.Work()
 	} else {
