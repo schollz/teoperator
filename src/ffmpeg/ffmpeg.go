@@ -76,12 +76,10 @@ func ToMono(fname string) (fname2 string, err error) {
 		fname2,
 	)
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		return
 	}
-	secondsDuration, err := utils.ConvertToSeconds(utils.GetStringInBetween(string(out), "Duration: ", ","))
-	logger.Debug(secondsDuration)
 	return
 }
 
