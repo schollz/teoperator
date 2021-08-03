@@ -103,8 +103,8 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 					r.segments[i].StartAbs = j.start
 					r.segments[i].EndAbs = j.start + secondsMax
 					if i < len(op1data.End)-2 {
-						start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4096))
-						end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4096))
+						start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4058))
+						end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4058))
 						if start > end {
 							continue
 						}

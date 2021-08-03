@@ -36,11 +36,9 @@ func ToDrumSplice(fname string) (err error) {
 	}
 	op1data := op1.NewDrumPatch()
 	for i, seg := range segments {
-		segments[i].StartAbs = 0
-		segments[i].EndAbs = 11.5
 		if i < len(op1data.End)-2 {
-			start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4096))
-			end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4096))
+			start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4058))
+			end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4058))
 			if start > end {
 				continue
 			}
@@ -89,8 +87,8 @@ func ToDrum(fnames []string) (err error) {
 		if i > 0 {
 			sampleEnd[i] = sampleEnd[i] + sampleEnd[i-1]
 		}
-		if sampleEnd[i] > 44100*11.5 {
-			sampleEnd[i] = 44100 * 11.5
+		if sampleEnd[i] > 44100*12 {
+			sampleEnd[i] = 44100 * 12
 		}
 		sampleEnd[i] = sampleEnd[i]
 		log.Debugf("%s end: %d", fname, sampleEnd[i])
@@ -112,22 +110,10 @@ func ToDrum(fnames []string) (err error) {
 		if i == 0 {
 			drumPatch.Start[i] = 0
 		} else {
-			drumPatch.Start[i] = (sampleEnd[i-1] - 384*int64(i)) * 4096
+			// 2147483646/(44100*12)
+			drumPatch.Start[i] = (sampleEnd[i-1]) * 4058
 		}
-		// can't say much about these numbers, trial and error
-		drumPatch.End[i] = (sampleEnd[i] - 384*int64(i)) * 4096
-		if drumPatch.End[i] > 2147483646 {
-			drumPatch.End[i] = 2147483646
-		}
-		if drumPatch.Start[i] > 2147483646 {
-			drumPatch.Start[i] = 2147483646
-		}
-		if drumPatch.End[i] < 0 {
-			drumPatch.End[i] = 0
-		}
-		if drumPatch.Start[i] < 0 {
-			drumPatch.Start[i] = 0
-		}
+		drumPatch.End[i] = (sampleEnd[i]) * 4058
 	}
 
 	err = drumPatch.Save(fname2, finalName)

@@ -56,7 +56,7 @@ func (drumpatch *DrumPatch) Save(audioClip string, fnameOut string) (err error) 
 		return
 	}
 	// generate a merged audio waveform, downsampled to 1 channel
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100  -ac 1 %s", audioClip, fnameOut)
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 12 -ar 44100  -ac 1 %s", audioClip, fnameOut)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
@@ -79,9 +79,21 @@ func (drumpatch *DrumPatch) Save(audioClip string, fnameOut string) (err error) 
 	// normalize drumpatch, all the start/stop blocks need to be factors of 8192
 	for i := range drumpatch.End {
 		drumpatch.End[i] = drumpatch.End[i] * 8192 / 8192
+		if drumpatch.End[i] > 2147483646 {
+			drumpatch.End[i] = 2147483646
+		}
+		if drumpatch.End[i] < 0 {
+			drumpatch.End[i] = 0
+		}
 	}
 	for i := range drumpatch.Start {
 		drumpatch.Start[i] = drumpatch.Start[i] * 8192 / 8192
+		if drumpatch.Start[i] > 2147483646 {
+			drumpatch.Start[i] = 2147483646
+		}
+		if drumpatch.Start[i] < 0 {
+			drumpatch.Start[i] = 0
+		}
 	}
 
 	op1dataBytes, err := json.Marshal(drumpatch)

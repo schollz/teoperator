@@ -75,7 +75,7 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 func ToMono(fname string) (fname2 string, err error) {
 	_, fname2 = filepath.Split(fname)
 	fname2 = fname2 + ".mono.wav"
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100 -ac 1 %s",
+	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 12 -ar 44100 -ac 1 %s",
 		fname,
 		fname2,
 	)

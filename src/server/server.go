@@ -492,7 +492,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	// generate patches
 	var segments [][]models.AudioSegment
 	if patchType == "drum" {
-		segments, err = audiosegment.SplitEqual(shortName, 11.5, 1)
+		segments, err = audiosegment.SplitEqual(shortName, 12, 1)
 		if err != nil {
 			return
 		}
