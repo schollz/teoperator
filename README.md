@@ -16,7 +16,7 @@ That will install `teoperator` on your system.
 
 ## Usage
 
-You can use *teoperator* to create drum patches or sample-based synth patches for the op-1 or op-z. The resulting file is a `.aif` converted to mono 44.1khz which metadata representing key-assignment information for the op-1 or op-z. You can use any kind of input music file (wav, aif, mp3, flac, etc.).
+You can use *teoperator* to create drum patches or sample-based synth patches for the op-1 or op-z. The resulting file is a `.aif` converted to mono 44.1khz with metadata representing key-assignment information for the op-1 or op-z. You can use any kind of input music file (wav, aif, mp3, flac, etc.).
 
 ### Make synth sample patches
 
@@ -40,7 +40,7 @@ To make a drumkit patch you can convert multiple files and splice points will be
 teoperator drum kick.wav snare.wav openhat.wav closedhat.wav
 ```
 
-### Make a sample patch
+### Make a drum sample patch
 
 To make a sample patch you can convert one sample and splice points will be automatically determined by transients:
 
@@ -53,7 +53,7 @@ teoperator drum vocals.wav
 To make a drum loop patch you can convert one sample and define splice points to be equally spaced along the sample:
 
 ```
-teoperator drum --slices 16 vocals.wav
+teoperator drum --slices 16 drumloop.wav
 ```
 
 ## Web server ([teoperator.com](https://teoperator.com))
