@@ -5,6 +5,8 @@ import (
 
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/convert"
+	"github.com/schollz/teoperator/src/download"
+	"github.com/schollz/teoperator/src/server"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -60,6 +62,26 @@ create a synth patch from a sample with known frequency:
 			},
 			Action: func(c *cli.Context) error {
 				return convert.ToSynth(c.Args().Get(1), c.Float64("freq"))
+			},
+		},
+		{
+			Name:      "server",
+			Usage:     "run server interface",
+			UsageText: "",
+			Flags: []cli.Flag{
+				&cli.IntFlag{Name: "port", Value: 8053, Usage: "local port"},
+				&cli.StringFlag{Name: "name", Value: "http://localhost:8053", Usage: "name of server"},
+				&cli.StringFlag{Name: "duct", Value: "", Usage: "duct name for spanning multiple workers"},
+				&cli.BoolVar{Name: "worker", Usage: "initiate a worker for the server"},
+			},
+			Action: func(c *cli.Context) error {
+				download.Duct = c.String("duct")
+				download.ServerName = c.String("name")
+				if c.Bool("worker") {
+					return download.Work()
+				} else {
+					return server.Run(c.Int("port"), c.String("name"))
+				}
 			},
 		},
 	}
