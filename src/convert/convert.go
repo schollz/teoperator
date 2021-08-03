@@ -13,8 +13,25 @@ import (
 	"github.com/schollz/teoperator/src/op1"
 )
 
+func newName(fname string) (fname2 string) {
+	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + "_patch.aif"
+	if _, err := os.Stat(fname2); os.IsNotExist(err) {
+		// does not exist
+		return
+	}
+	for i := 2; i < 100; i++ {
+		fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + fmt.Sprintf("_patch%d.aif", i)
+		if _, err := os.Stat(fname2); os.IsNotExist(err) {
+			// does not exist
+			return
+		}
+
+	}
+	return
+}
+
 func ToSynth(fname string, baseFreq float64) (err error) {
-	finalName := strings.TrimSuffix(fname, filepath.Ext(fname)) + "_patch.aif"
+	finalName := newName(fname)
 	synthPatch := op1.NewSynthSamplePatch(baseFreq)
 	err = synthPatch.SaveSample(fname, finalName, false)
 	if err == nil {
@@ -24,7 +41,7 @@ func ToSynth(fname string, baseFreq float64) (err error) {
 }
 
 func ToDrumSplice(fname string, slices int) (err error) {
-	finalName := strings.TrimSuffix(fname, filepath.Ext(fname)) + "_patch.aif"
+	finalName := newName(fname)
 	fname2, err := ffmpeg.ToMono(fname)
 	defer os.Remove(fname2)
 	if err != nil {
@@ -80,7 +97,7 @@ func ToDrum(fnames []string, slices int) (err error) {
 		return ToDrumSplice(fnames[0], slices)
 	}
 	_, finalName := filepath.Split(fnames[0])
-	finalName = strings.TrimSuffix(finalName, filepath.Ext(fnames[0])) + "_patch.aif"
+	finalName = newName(finalName)
 	log.Debugf("converting %+v", fnames)
 	f, err := ioutil.TempFile(".", "concat")
 	defer os.Remove(f.Name())
