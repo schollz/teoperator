@@ -14,7 +14,11 @@ go get -v github.com/schollz/teoperator@latest
 
 That will install `teoperator` on your system.
 
-## Make synth patches
+## Usage
+
+You can use *teoperator* to create drum patches or sample-based synth patches for the op-1 or op-z. The resulting file is a `.aif` converted to mono 44.1khz which metadata representing key-assignment information for the op-1 or op-z. You can use any kind of input music file (wav, aif, mp3, flac, etc.).
+
+### Make synth sample patches
 
 To make a synth patch just type:
 
@@ -27,8 +31,6 @@ Optionally, you can include the base frequency information which can be used on 
 ```
 teoperator synth --freq 220 piano.wav
 ```
-
-## Make drum patches
 
 ### Make a drum kit patch
 
