@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/schollz/logger"
@@ -50,12 +51,12 @@ func NumSamples(fname string) (numSamples int64, err error) {
 
 func Concatenate(fnames []string) (fname2 string, err error) {
 	f, err := ioutil.TempFile(".", "concat")
-	defer os.Remove(f.Name())
 	for _, fname := range fnames {
 		f.WriteString(fmt.Sprintf("file '%s'\n", fname))
 	}
 	f.Close()
-	fname2 = fnames[0] + "concat.wav"
+	_, fname2 = filepath.Split(fnames[0])
+	fname2 = fname2 + "concat.wav"
 	cmd := fmt.Sprintf("-y -f concat -i %s %s",
 		f.Name(),
 		fname2,
@@ -64,13 +65,16 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
 		return
+	} else {
+		os.Remove(f.Name())
 	}
 
 	return
 }
 
 func ToMono(fname string) (fname2 string, err error) {
-	fname2 = fname + ".mono.wav"
+	_, fname2 = filepath.Split(fname)
+	fname2 = fname2 + ".mono.wav"
 	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 11.5 -ar 44100 -ac 1 %s",
 		fname,
 		fname2,

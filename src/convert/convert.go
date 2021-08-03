@@ -14,8 +14,7 @@ import (
 
 func ToSynth(fname string, baseFreq float64) (err error) {
 	finalName := strings.TrimSuffix(fname, filepath.Ext(fname)) + "_patch.aif"
-	synthPatch := op1.NewSynthPatch()
-	synthPatch.BaseFreq = baseFreq
+	synthPatch := op1.NewSynthSamplePatch(baseFreq)
 	err = synthPatch.SaveSample(fname, finalName, false)
 	if err == nil {
 		fmt.Printf("converted %+v -> %s\n", fname, finalName)
@@ -24,7 +23,8 @@ func ToSynth(fname string, baseFreq float64) (err error) {
 }
 
 func ToDrum(fnames []string) (err error) {
-	finalName := strings.TrimSuffix(fnames[0], filepath.Ext(fnames[0])) + "_patch.aif"
+	_, finalName := filepath.Split(fnames[0])
+	finalName = strings.TrimSuffix(finalName, filepath.Ext(fnames[0])) + "_patch.aif"
 	log.Debugf("converting %+v", fnames)
 	f, err := ioutil.TempFile(".", "concat")
 	defer os.Remove(f.Name())
@@ -45,6 +45,11 @@ func ToDrum(fnames []string) (err error) {
 		if i > 0 {
 			sampleEnd[i] = sampleEnd[i] + sampleEnd[i-1]
 		}
+		if sampleEnd[i] > 44100*11.5 {
+			sampleEnd[i] = 44100 * 11.5
+		}
+		sampleEnd[i] = sampleEnd[i]
+		log.Debugf("%s end: %d", fname, sampleEnd[i])
 	}
 	f.Close()
 
@@ -63,9 +68,22 @@ func ToDrum(fnames []string) (err error) {
 		if i == 0 {
 			drumPatch.Start[i] = 0
 		} else {
-			drumPatch.Start[i] = sampleEnd[i-1] * 4096
+			drumPatch.Start[i] = (sampleEnd[i-1] - 384*int64(i)) * 4096
 		}
-		drumPatch.End[i] = sampleEnd[i] * 4096
+		// can't say much about these numbers, trial and error
+		drumPatch.End[i] = (sampleEnd[i] - 384*int64(i)) * 4096
+		if drumPatch.End[i] > 2147483646 {
+			drumPatch.End[i] = 2147483646
+		}
+		if drumPatch.Start[i] > 2147483646 {
+			drumPatch.Start[i] = 2147483646
+		}
+		if drumPatch.End[i] < 0 {
+			drumPatch.End[i] = 0
+		}
+		if drumPatch.Start[i] < 0 {
+			drumPatch.Start[i] = 0
+		}
 	}
 
 	err = drumPatch.Save(fname2, finalName)
