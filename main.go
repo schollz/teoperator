@@ -9,30 +9,57 @@ import (
 )
 
 func main() {
-	app := &cli.App{}
+	drumUsage := `
+create a drum patch from one-shot files (spliced at file endpoints):
+	
+    teoperator drum kick.mp3 snare.wav hihat1.wav hihat2.wav
+
+create a drum patch from one file (spliced at transients):
+	
+    teoperator drum fullset.wav
+
+create a drum patch from one file, spliced at even intervals:
+	
+    teoperator drum --slices 16 fullset.wav
+`
+	synthUsage := `
+create a synth patch from a sample:
+	
+    teoperator synth trumpet.wav
+
+create a synth patch from a sample with known frequency:
+	
+    teoperator synth --freq 220 trumpet_a2.wav`
+	app := &cli.App{
+		Usage:     "create patches for the op-1 or op-z",
+		UsageText: drumUsage + synthUsage,
+	}
 	app.UseShortOptionHandling = true
 	app.Commands = []*cli.Command{
 		{
-			Name:  "drum",
-			Usage: "create drum patch from file(s)",
+			Name:      "drum",
+			Usage:     "create drum patch from file(s)",
+			UsageText: drumUsage,
 			Flags: []cli.Flag{
 				&cli.IntFlag{Name: "slices", Usage: "number of slices", Value: 0},
-				&cli.StringSliceFlag{Name: "file", Aliases: []string{"f"}, Usage: "file(s)"},
 			},
 			Action: func(c *cli.Context) error {
-				err := convert.ToDrum(c.StringSlice("file"), c.Int("slices"))
-				return err
+				fnames := make([]string, c.Args().Len())
+				for i, _ := range fnames {
+					fnames[i] = c.Args().Get(i)
+				}
+				return convert.ToDrum(fnames, c.Int("slices"))
 			},
 		},
 		{
-			Name:  "synth",
-			Usage: "create synth patch from file",
+			Name:      "synth",
+			Usage:     "create synth patch from file",
+			UsageText: synthUsage,
 			Flags: []cli.Flag{
 				&cli.Float64Flag{Name: "freq", Aliases: []string{"s"}, Value: 440, Usage: "base frequency"},
-				&cli.StringFlag{Name: "file", Aliases: []string{"f"}, Usage: "file"},
 			},
 			Action: func(c *cli.Context) error {
-				return nil
+				return convert.ToSynth(c.Args().Get(1), c.Float64("freq"))
 			},
 		},
 	}
