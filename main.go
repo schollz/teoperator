@@ -1,16 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/convert"
 	"github.com/schollz/teoperator/src/download"
+	"github.com/schollz/teoperator/src/ffmpeg"
 	"github.com/schollz/teoperator/src/server"
 	cli "github.com/urfave/cli/v2"
 )
 
 func main() {
+	log.SetLevel("info")
+	if !ffmpeg.IsInstalled() {
+		fmt.Println("ffmpeg not installed")
+		fmt.Println("you can install it here: https://www.ffmpeg.org/download.html")
+		os.Exit(1)
+	}
+
 	drumUsage := `
 create a drum patch from one-shot files (spliced at file endpoints):
 	
@@ -33,10 +42,14 @@ create a synth patch from a sample with known frequency:
 	
     teoperator synth --freq 220 trumpet_a2.wav`
 	app := &cli.App{
+		Name:      "teoperator",
 		Usage:     "create patches for the op-1 or op-z",
 		UsageText: drumUsage + synthUsage,
 	}
 	app.UseShortOptionHandling = true
+	app.Flags = []cli.Flag{
+		&cli.BoolFlag{Name: "debug"},
+	}
 	app.Commands = []*cli.Command{
 		{
 			Name:      "drum",
@@ -46,6 +59,10 @@ create a synth patch from a sample with known frequency:
 				&cli.IntFlag{Name: "slices", Usage: "number of slices", Value: 0},
 			},
 			Action: func(c *cli.Context) error {
+				if c.Bool("debug") {
+					log.SetLevel("debug")
+				}
+
 				fnames := make([]string, c.Args().Len())
 				for i, _ := range fnames {
 					fnames[i] = c.Args().Get(i)
@@ -61,6 +78,9 @@ create a synth patch from a sample with known frequency:
 				&cli.Float64Flag{Name: "freq", Aliases: []string{"s"}, Value: 440, Usage: "base frequency"},
 			},
 			Action: func(c *cli.Context) error {
+				if c.Bool("debug") {
+					log.SetLevel("debug")
+				}
 				return convert.ToSynth(c.Args().Get(1), c.Float64("freq"))
 			},
 		},
@@ -72,9 +92,13 @@ create a synth patch from a sample with known frequency:
 				&cli.IntFlag{Name: "port", Value: 8053, Usage: "local port"},
 				&cli.StringFlag{Name: "name", Value: "http://localhost:8053", Usage: "name of server"},
 				&cli.StringFlag{Name: "duct", Value: "", Usage: "duct name for spanning multiple workers"},
-				&cli.BoolVar{Name: "worker", Usage: "initiate a worker for the server"},
+				&cli.BoolFlag{Name: "worker", Usage: "initiate a worker for the server"},
 			},
 			Action: func(c *cli.Context) error {
+				if c.Bool("debug") {
+					log.SetLevel("debug")
+				}
+
 				download.Duct = c.String("duct")
 				download.ServerName = c.String("name")
 				if c.Bool("worker") {
