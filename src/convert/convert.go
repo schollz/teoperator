@@ -3,6 +3,7 @@ package convert
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +23,50 @@ func ToSynth(fname string, baseFreq float64) (err error) {
 	return
 }
 
+func ToDrumSplice(fname string) (err error) {
+	finalName := strings.TrimSuffix(fname, filepath.Ext(fname)) + "_patch.aif"
+	fname2, err := ffmpeg.ToMono(fname)
+	defer os.Remove(fname2)
+	if err != nil {
+		return
+	}
+	segments, err := ffmpeg.SplitOnSilence(fname2, -22, 0.2, -0.2)
+	if err != nil {
+		return
+	}
+	op1data := op1.NewDrumPatch()
+	for i, seg := range segments {
+		segments[i].StartAbs = 0
+		segments[i].EndAbs = 11.5
+		if i < len(op1data.End)-2 {
+			start := int64(math.Floor(math.Round(seg.Start*100) * 441 * 4096))
+			end := int64(math.Floor(math.Round(seg.End*100) * 441 * 4096))
+			if start > end {
+				continue
+			}
+			if end > op1data.End[len(op1data.End)-1] {
+				continue
+			}
+			op1data.Start[i] = start
+			op1data.End[i] = end
+		}
+	}
+
+	err = op1data.Save(fname2, finalName)
+	if err == nil {
+		fmt.Printf("converted %+v -> %s\n", fname, finalName)
+	}
+	return
+}
+
 func ToDrum(fnames []string) (err error) {
+	if len(fnames) == 0 {
+		err = fmt.Errorf("no files!")
+		return
+	}
+	if len(fnames) == 1 {
+		return ToDrumSplice(fnames[0])
+	}
 	_, finalName := filepath.Split(fnames[0])
 	finalName = strings.TrimSuffix(finalName, filepath.Ext(fnames[0])) + "_patch.aif"
 	log.Debugf("converting %+v", fnames)
