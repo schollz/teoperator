@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/md5"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -31,6 +32,9 @@ import (
 	"github.com/schollz/teoperator/src/op1"
 	"github.com/schollz/teoperator/src/utils"
 )
+
+//go:embed static templates
+var content embed.FS
 
 const MaxBytesPerFile = 100000000
 const ContentDirectory = "data/uploads"
@@ -69,7 +73,7 @@ func Run(port int, sname string) (err error) {
 	os.MkdirAll(ContentDirectory, os.ModePerm)
 	loadTemplates()
 	log.Infof("listening on :%d", port)
-	http.HandleFunc("/static/", httpfileserver.New("/static/", "static/", httpfileserver.OptionNoCache(true)).Handle())
+	http.Handle("/static/", http.FileServer(http.FS(content)))
 	http.HandleFunc("/data/", httpfileserver.New("/data/", "data/", httpfileserver.OptionNoCache(true)).Handle())
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
@@ -168,12 +172,12 @@ func loadTemplates() {
 		},
 	}
 	for _, templateName := range []string{"main"} {
-		b, err := ioutil.ReadFile("templates/base.html")
+		b, err := content.ReadFile("templates/base.html")
 		if err != nil {
 			panic(err)
 		}
 		t[templateName] = template.Must(template.New("base").Funcs(funcMap).Delims("((", "))").Parse(string(b)))
-		b, err = ioutil.ReadFile("templates/" + templateName + ".html")
+		b, err = content.ReadFile("templates/" + templateName + ".html")
 		if err != nil {
 			panic(err)
 		}
