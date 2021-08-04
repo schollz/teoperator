@@ -1,9 +1,10 @@
 # teoperator
 
+*teoperator* lets you easily make drum and synth patches for the op-1 or op-z. You don't need this software to use *teoperator* - you can use most of the functionality via [teoperator.com](https://teoperator.com). You can also use this software via a command-line program that gives you more functionality - to create a variety of patches from any number of music files (wav, aif, mp3, flac all supported). I did a [write-up of how it works](https://schollz.com/blog/op1/), basically I had to reverse engineer pieces of the metadata in the op-1 and op-z patches. 
 
-This repo is a [Go library](https://pkg.go.dev/github.com/schollz/teoperator/src/op1?tab=doc) and a server that you can chop up sounds that can build synth and drum patches for the OP-1 or OP-Z. I went down a [rabbit hole to reverse-engineer the OP-1 drum patch](https://schollz.com/blog/op1/) and this was the end result. You can access the server at https://op1z.com and you can build your own synth and drum patches from any sound.
+## Installation
 
-## Command-line program
+*teoperator* requires ffmpeg. First, [install ffmpeg](https://ffmpeg.org/download.html). 
 
 To use as a command line program you first need to [install Go](https://golang.org/doc/install) and then in a terminal run:
 
@@ -13,26 +14,46 @@ go get -v github.com/schollz/teoperator@latest
 
 That will install `teoperator` on your system.
 
-### Make synth patches
+## Usage
+
+You can use *teoperator* to create drum patches or sample-based synth patches for the op-1 or op-z. The resulting file is a `.aif` converted to mono 44.1khz with metadata representing key-assignment information for the op-1 or op-z. You can use any kind of input music file (wav, aif, mp3, flac, etc.).
+
+### Make synth sample patches
 
 To make a synth patch just type:
 
 ```
-teoperator --synth piano.wav
+teoperator synth piano.wav
 ```
 
 Optionally, you can include the base frequency information which can be used on the op-1/opz to convert to the right pitch:
 
 ```
-teoperator --freq 220 --synth piano.wav
+teoperator synth --freq 220 piano.wav
 ```
 
-### Make drum patches
+### Make a drum kit patch
 
-To make a drum patch you can convert one or multiple files. Splice points will be set at the boundaries of each individual file:
+To make a drumkit patch you can convert multiple files and splice points will be set at the boundaries of each individual file:
 
 ```
-teoperator --drum kick.wav snare.wav openhat.wav closedhat.wav
+teoperator drum kick.wav snare.wav openhat.wav closedhat.wav
+```
+
+### Make a drum sample patch
+
+To make a sample patch you can convert one sample and splice points will be automatically determined by transients:
+
+```
+teoperator drum vocals.wav
+```
+
+### Make a drum loop patch
+
+To make a drum loop patch you can convert one sample and define splice points to be equally spaced along the sample:
+
+```
+teoperator drum --slices 16 drumloop.wav
 ```
 
 ## Web server ([teoperator.com](https://teoperator.com))
@@ -42,15 +63,22 @@ teoperator --drum kick.wav snare.wav openhat.wav closedhat.wav
 </p>
 
 
+The webserver requires a few more dependencies. You can install them via `apt`:
+
 ```
-$ sudo apt install imagemagick ffmpeg 
+$ sudo apt install imagemagick 
 $ sudo add-apt-repository ppa:chris-needham/ppa
 $ sudo apt-get update
 $ sudo apt-get install audiowaveform
 $ sudo -H python3 -m pip install youtube-dl
-$ go build 
-$ ./teoperator --serve --debug
-[info]	2020/05/17 13:33:58 listening on :8053
+```
+
+And then you can run the server via
+
+```
+$ git clone https://github.com/schollz/teoperator
+$ cd teoperator && go build -v
+$ teoperator server
 ```
 
 Then open a browser to `localhost:8053`!

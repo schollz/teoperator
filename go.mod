@@ -9,5 +9,6 @@ require (
 	github.com/schollz/logger v1.2.0
 	github.com/speps/go-hashids v2.0.0+incompatible
 	github.com/stretchr/testify v1.6.1
+	github.com/urfave/cli/v2 v2.3.0
 	github.com/youpy/go-wav v0.1.0
 )

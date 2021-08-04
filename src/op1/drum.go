@@ -79,8 +79,8 @@ func (drumpatch *DrumPatch) Save(audioClip string, fnameOut string) (err error) 
 	// normalize drumpatch, all the start/stop blocks need to be factors of 8192
 	for i := range drumpatch.End {
 		drumpatch.End[i] = drumpatch.End[i] * 8192 / 8192
-		if drumpatch.End[i] > 2147483646 {
-			drumpatch.End[i] = 2147483646
+		if drumpatch.End[i] > MAXENDPOINT {
+			drumpatch.End[i] = MAXENDPOINT
 		}
 		if drumpatch.End[i] < 0 {
 			drumpatch.End[i] = 0
@@ -88,8 +88,8 @@ func (drumpatch *DrumPatch) Save(audioClip string, fnameOut string) (err error) 
 	}
 	for i := range drumpatch.Start {
 		drumpatch.Start[i] = drumpatch.Start[i] * 8192 / 8192
-		if drumpatch.Start[i] > 2147483646 {
-			drumpatch.Start[i] = 2147483646
+		if drumpatch.Start[i] > MAXENDPOINT {
+			drumpatch.Start[i] = MAXENDPOINT
 		}
 		if drumpatch.Start[i] < 0 {
 			drumpatch.Start[i] = 0

@@ -59,7 +59,6 @@ var rootNoteToFrequency = map[string]float64{
 }
 
 func Run(port int, sname string) (err error) {
-	fmt.Println(rootNoteToFrequency)
 	serverName = sname
 	// initialize chunking maps
 	uploadsInProgress = make(map[string]int)
