@@ -366,7 +366,10 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	if secondsEnd[0] != "" {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
-	splices, _ := strconv.Atoi(splicesA[0])
+	splices := 0
+	if len(splicesA) > 0 {
+		splices, _ = strconv.Atoi(splicesA[0])
+	}
 	log.Debugf("splices: %d", splices)
 
 	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote, splices)
