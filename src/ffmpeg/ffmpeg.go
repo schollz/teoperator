@@ -197,7 +197,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, 
 				segment.End = seconds
 				segment.Duration = segment.End - segment.Start
 				segment.Filename = fname
-				if segment.Duration < 0.25 {
+				if segment.Duration < 0.25 && len(segments) > 0 {
 					segments[len(segments)-1].End = seconds
 					segments[len(segments)-1].Duration = segments[len(segments)-1].End - segments[len(segments)-1].Start
 				} else {

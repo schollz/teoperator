@@ -433,7 +433,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	}
 	fname = path.Join(pathToData, path.Base(uparsed.Path))
 	if !strings.Contains(fname, ".") {
-		fname += ".mp3"
+		fname += ".wav"
 	}
 
 	fnameID := path.Join("data", fmt.Sprintf("%x%s", md5.Sum([]byte(u)), filepath.Ext(fname)))
@@ -468,17 +468,17 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 
 	if removeSilence {
 		log.Debug("removing silence")
-		err = os.Rename(shortName, shortName+".mp3")
+		err = os.Rename(shortName, shortName+".wav")
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		err = ffmpeg.RemoveSilence(shortName+".mp3", shortName)
+		err = ffmpeg.RemoveSilence(shortName+".wav", shortName)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		err = os.Remove(shortName + ".mp3")
+		err = os.Remove(shortName + ".wav")
 		if err != nil {
 			log.Error(err)
 			return
@@ -564,7 +564,7 @@ func makeSynthPatch(fname string, rootFrequency float64) (segments [][]models.Au
 		},
 	}
 
-	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".mp3")
+	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".wav")
 	cmd := fmt.Sprintf("-y -i %s %s", fnameout, fnamewav)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()

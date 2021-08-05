@@ -31,11 +31,11 @@ func init() {
 const SECONDSATEND = 0.1
 
 func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splices int) (allSegments [][]models.AudioSegment, err error) {
-	err = Convert(fname, fname+".mp3")
+	err = Convert(fname, fname+".wav")
 	if err != nil {
 		return
 	}
-	fname = fname + ".mp3"
+	fname = fname + ".wav"
 
 	if splices > 0 {
 		secondsOverlap = 0
@@ -79,7 +79,7 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splice
 				// step 3: specify the work for the worker
 				var r result
 				folder, filenameonly := filepath.Split(fname)
-				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%03d.mp3", filenameonly[:3], int(j.start)))
+				fnameTrunc := path.Join(folder, fmt.Sprintf("%s%03d.wav", filenameonly[:3], int(j.start)))
 				fnameTruncOP1 := path.Join(folder, fmt.Sprintf("%s%03d.aif", filenameonly[:3], int(j.start)))
 				r.err = Truncate(fname, fnameTrunc, utils.SecondsToString(j.start), utils.SecondsToString(j.start+secondsMax))
 				if r.err != nil {
