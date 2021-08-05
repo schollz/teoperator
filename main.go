@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
+	"time"
 
 	log "github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/convert"
@@ -49,6 +52,15 @@ create a synth patch from a sample with known frequency:
 	app.UseShortOptionHandling = true
 	app.Flags = []cli.Flag{
 		&cli.BoolFlag{Name: "debug"},
+	}
+	app.Action = func(c *cli.Context) error {
+		download.Duct = ""
+		download.ServerName = "http://localhost:8053"
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			openbrowser("http://localhost:8053")
+		}()
+		return server.Run(8053, download.ServerName)
 	}
 	app.Commands = []*cli.Command{
 		{
@@ -126,54 +138,21 @@ create a synth patch from a sample with known frequency:
 	}
 }
 
-// func run() {
-// 	var flagSynth, flagOut, flagDuct, flagServerName string
-// 	var flagDebug, flagServer, flagWorker, flagDrum bool
-// 	var flagPort, flagSlices int
-// 	var flagFreq float64
-// 	flag.BoolVar(&flagDebug, "debug", false, "debug mode")
-// 	flag.BoolVar(&flagDrum, "drum", false, "build drum patch")
-// 	flag.BoolVar(&flagServer, "serve", false, "make a server")
-// 	flag.BoolVar(&flagWorker, "work", false, "start a download worker")
-// 	flag.Float64Var(&flagFreq, "freq", 440, "base frequency when generating synth patch")
-// 	flag.IntVar(&flagPort, "port", 8053, "port to use")
-// 	flag.IntVar(&flagSlices, "slice", 0, "if making drum patch, define number of slices")
-// 	flag.StringVar(&flagSynth, "synth", "", "build synth patch from file")
-// 	flag.StringVar(&flagOut, "out", "", "name of new patch")
-// 	flag.StringVar(&flagDuct, "duct", "", "name of duct")
-// 	flag.StringVar(&flagServerName, "server", "http://localhost:8053", "name of external ip")
-// 	flag.Parse()
+func openbrowser(url string) {
+	var err error
 
-// 	download.Duct = flagDuct
-// 	download.ServerName = flagServerName
-// 	log.SetLevel("error")
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
 
-// 	if !ffmpeg.IsInstalled() {
-// 		fmt.Println("ffmpeg not installed")
-// 		fmt.Println("you can install it here: https://www.ffmpeg.org/download.html")
-// 		os.Exit(1)
-// 	}
-
-// 	if flagDebug {
-// 		log.SetLevel("debug")
-// 	} else {
-// 		log.SetLevel("info")
-// 	}
-
-// 	var err error
-// 	if flagServer {
-// 		err = server.Run(flagPort, flagServerName)
-// 	} else if flagSynth != "" {
-// 		err = convert.ToSynth(flagSynth, flagFreq)
-// 	} else if flagDrum {
-// 		err = convert.ToDrum(flag.Args())
-// 	} else if flagWorker {
-// 		err = download.Work()
-// 	} else {
-// 		flag.PrintDefaults()
-// 	}
-// 	if err != nil {
-// 		log.Error(err)
-// 		os.Exit(1)
-// 	}
-// }
+}
