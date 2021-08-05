@@ -30,12 +30,16 @@ func init() {
 
 const SECONDSATEND = 0.1
 
-func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSegments [][]models.AudioSegment, err error) {
+func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splices int) (allSegments [][]models.AudioSegment, err error) {
 	err = Convert(fname, fname+".mp3")
 	if err != nil {
 		return
 	}
 	fname = fname + ".mp3"
+
+	if splices > 0 {
+		secondsOverlap = 0
+	}
 
 	cmd := fmt.Sprintf("%s", fname)
 	logger.Debug(cmd)
@@ -84,11 +88,21 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64) (allSe
 					continue
 				}
 
-				r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
-				if r.err != nil {
-					logger.Error(r.err)
-					results <- r
-					continue
+				if splices == 0 {
+					r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
+					if r.err != nil {
+						logger.Error(r.err)
+						results <- r
+						continue
+					}
+				} else {
+					r.segments = make([]models.AudioSegment, splices)
+					for i, _ := range r.segments {
+						r.segments[i].Start = secondsDuration * float64(i) / float64(splices)
+						r.segments[i].End = secondsDuration * float64(i+1) / float64(splices)
+						r.segments[i].Duration = r.segments[i].End - r.segments[i].Start
+						r.segments[i].Filename = fnameTrunc
+					}
 				}
 				r.err = DrawSegments(r.segments)
 				if r.err != nil {

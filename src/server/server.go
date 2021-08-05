@@ -107,6 +107,7 @@ type Metadata struct {
 	IsSynthPatch  bool
 	RemoveSilence bool
 	RootNote      string
+	Splices       int
 }
 
 type FileData struct {
@@ -336,6 +337,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	patchtypeA, _ := r.URL.Query()["synthPatch"]
 	removeSilenceA, _ := r.URL.Query()["removeSilence"]
 	rootNoteA, _ := r.URL.Query()["rootNote"]
+	splicesA, _ := r.URL.Query()["splices"]
 	patchtype := "drum"
 	removeSilence := false
 	rootNote := "A"
@@ -364,8 +366,10 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	if secondsEnd[0] != "" {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
+	splices, _ := strconv.Atoi(splicesA[0])
+	log.Debugf("splices: %d", splices)
 
-	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote)
+	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote, splices)
 	if err != nil {
 		return
 	}
@@ -395,7 +399,7 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-func generateUserData(u string, startStop []float64, patchType string, removeSilence bool, rootNote string) (uuid string, err error) {
+func generateUserData(u string, startStop []float64, patchType string, removeSilence bool, rootNote string, splices int) (uuid string, err error) {
 	log.Debug(u, startStop)
 	log.Debug(patchType)
 	if startStop[1]-startStop[0] < 12 {
@@ -405,7 +409,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		startStop[1] = startStop[0] + 5.75
 	}
 
-	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v %+v %+v", patchType, u, startStop, removeSilence, rootNote))))
+	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v %+v %+v %+v", patchType, u, startStop, removeSilence, rootNote, splices))))
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
@@ -495,7 +499,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	// generate patches
 	var segments [][]models.AudioSegment
 	if patchType == "drum" {
-		segments, err = audiosegment.SplitEqual(shortName, 12, 1)
+		segments, err = audiosegment.SplitEqual(shortName, 12, 1, splices)
 		if err != nil {
 			return
 		}
@@ -533,6 +537,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		IsSynthPatch:  patchType == "synth",
 		RemoveSilence: removeSilence,
 		RootNote:      rootNote,
+		Splices:       splices,
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
