@@ -458,29 +458,33 @@ display:none;
                     </select>
                     <label for="synthPatch">patch type:</label>
                 </div>
-                <div id="optionRemoveSilence" ((if $.Metadata.IsSynthPatch))style="display:none;"((end))>
+                <div id="optionRemoveSilence" ((if $.Metadata.IsSynthPatch))style="display:none;" ((end))>
                     <select name="removeSilence" id="removeSilence" style="text-align: center;">
                         <option value="no">no</option>
                         <option value="yes" ((if $.Metadata.RemoveSilence))selected((end))>yes</option>
                     </select>
                     <label for="removeSilence">remove silence?</label>
                 </div>
-                <div id="optionRootNote" ((if $.Metadata.IsSynthPatch))((else))style="display:none;"((end))>
+                <div id="optionNumberSplices" ((if $.Metadata.IsSynthPatch))style="display:none;" ((end))>
+                    <input type="decimal" id="splices" name="splices" value="((if .Metadata))((.Metadata.Splices))((end))" style="min-width: 60%;">
+                    <label for="optionNumberSplices">splices</label>
+                </div>
+                <div id="optionRootNote" ((if $.Metadata.IsSynthPatch))((else))style="display:none;" ((end))>
                     <select name="rootNote" id="rootNote" style="text-align: center;">
-                        <option value="A"  ((if eq $.Metadata.RootNote "A"))selected((end))>A</option>
-                        <option value="A#"  ((if eq $.Metadata.RootNote "A#"))selected((end))>A#</option>
-                        <option value="B" ((if eq $.Metadata.RootNote "B"))selected((end))>B</option>
-                        <option value="C" ((if eq $.Metadata.RootNote "C"))selected((end))>C</option>
-                        <option value="C#" ((if eq $.Metadata.RootNote "C#"))selected((end))>C#</option>
-                        <option value="D" ((if eq $.Metadata.RootNote "D"))selected((end))>D</option>
-                        <option value="D#" ((if eq $.Metadata.RootNote "D#"))selected((end))>D#</option>
-                        <option value="E" ((if eq $.Metadata.RootNote "E"))selected((end))>E</option>
-                        <option value="F" ((if eq $.Metadata.RootNote "F"))selected((end))>F</option>
-                        <option value="F#" ((if eq $.Metadata.RootNote "F#"))selected((end))>F#</option>
-                        <option value="G" ((if eq $.Metadata.RootNote "G"))selected((end))>G</option>
-                        <option value="G#" ((if eq $.Metadata.RootNote "G#"))selected((end))>G#</option>
+                        <option value="A" ((if eq $.Metadata.RootNote "A" ))selected((end))>A</option>
+                        <option value="A#" ((if eq $.Metadata.RootNote "A#" ))selected((end))>A#</option>
+                        <option value="B" ((if eq $.Metadata.RootNote "B" ))selected((end))>B</option>
+                        <option value="C" ((if eq $.Metadata.RootNote "C" ))selected((end))>C</option>
+                        <option value="C#" ((if eq $.Metadata.RootNote "C#" ))selected((end))>C#</option>
+                        <option value="D" ((if eq $.Metadata.RootNote "D" ))selected((end))>D</option>
+                        <option value="D#" ((if eq $.Metadata.RootNote "D#" ))selected((end))>D#</option>
+                        <option value="E" ((if eq $.Metadata.RootNote "E" ))selected((end))>E</option>
+                        <option value="F" ((if eq $.Metadata.RootNote "F" ))selected((end))>F</option>
+                        <option value="F#" ((if eq $.Metadata.RootNote "F#" ))selected((end))>F#</option>
+                        <option value="G" ((if eq $.Metadata.RootNote "G" ))selected((end))>G</option>
+                        <option value="G#" ((if eq $.Metadata.RootNote "G#" ))selected((end))>G#</option>
                     </select>
-                    <label for="rootNote">root note:                     	
+                    <label for="rootNote">root note:
                     </label>
                 </div>
                 <div>
@@ -511,11 +515,11 @@ display:none;
                     <p style="display:none;" id="p((filebase .Prefix))">
                         <a href="((.Prefix)).aif" download>download ((filebase .Prefix)).aif</a>: ((roundfloat .Start)) to ((roundfloat .Stop)) seconds</p>
                     <p>
-                        <img src="((.Prefix)).mp3.png" class="waveform" id="((filebase .Prefix))">
+                        <img src="((.Prefix)).wav.png" class="waveform" id="((filebase .Prefix))">
                     </p>
                     <p style="display:none;" id="a((filebase .Prefix))">
                         <audio controls id="audio((filebase .Prefix))">
-                            <source src="/((.Prefix)).mp3" type="audio/mp3" />
+                            <source src="/((.Prefix)).wav" type="audio/wav" />
                             Your browser does not support the audio tag.
                         </audio>
                     </p>
@@ -567,15 +571,17 @@ display:none;
             return true;
         });
 
-        $('#synthPatch').change(function(e){
-        	console.log(e.target.value);
-        	if (e.target.value == "drum") {
-        		$("#optionRemoveSilence").show();
-        		$("#optionRootNote").hide();        		
-        	} else {
-        		$("#optionRemoveSilence").hide();        		
-        		$("#optionRootNote").show();        		
-        	}
+        $('#synthPatch').change(function(e) {
+            console.log(e.target.value);
+            if (e.target.value == "drum") {
+                $("#optionRemoveSilence").show();
+                $("#optionNumberSplices").show();
+                $("#optionRootNote").hide();
+            } else {
+                $("#optionRemoveSilence").hide();
+                $("#optionNumberSplices").hide();
+                $("#optionRootNote").show();
+            }
         })
     });
     </script>

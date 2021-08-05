@@ -107,6 +107,7 @@ type Metadata struct {
 	IsSynthPatch  bool
 	RemoveSilence bool
 	RootNote      string
+	Splices       int
 }
 
 type FileData struct {
@@ -336,6 +337,7 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	patchtypeA, _ := r.URL.Query()["synthPatch"]
 	removeSilenceA, _ := r.URL.Query()["removeSilence"]
 	rootNoteA, _ := r.URL.Query()["rootNote"]
+	splicesA, _ := r.URL.Query()["splices"]
 	patchtype := "drum"
 	removeSilence := false
 	rootNote := "A"
@@ -364,8 +366,13 @@ func viewPatch(w http.ResponseWriter, r *http.Request) (err error) {
 	if secondsEnd[0] != "" {
 		startStop[1], _ = strconv.ParseFloat(secondsEnd[0], 64)
 	}
+	splices := 0
+	if len(splicesA) > 0 {
+		splices, _ = strconv.Atoi(splicesA[0])
+	}
+	log.Debugf("splices: %d", splices)
 
-	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote)
+	uuid, err := generateUserData(audioURL[0], startStop, patchtype, removeSilence, rootNote, splices)
 	if err != nil {
 		return
 	}
@@ -395,7 +402,7 @@ func viewMain(w http.ResponseWriter, r *http.Request, messageError string, templ
 	return
 }
 
-func generateUserData(u string, startStop []float64, patchType string, removeSilence bool, rootNote string) (uuid string, err error) {
+func generateUserData(u string, startStop []float64, patchType string, removeSilence bool, rootNote string, splices int) (uuid string, err error) {
 	log.Debug(u, startStop)
 	log.Debug(patchType)
 	if startStop[1]-startStop[0] < 12 {
@@ -405,7 +412,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		startStop[1] = startStop[0] + 5.75
 	}
 
-	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v %+v %+v", patchType, u, startStop, removeSilence, rootNote))))
+	uuid = fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%+v %+v %+v %+v %+v %+v", patchType, u, startStop, removeSilence, rootNote, splices))))
 
 	// create path to data
 	pathToData := path.Join("data", uuid)
@@ -429,7 +436,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	}
 	fname = path.Join(pathToData, path.Base(uparsed.Path))
 	if !strings.Contains(fname, ".") {
-		fname += ".mp3"
+		fname += ".wav"
 	}
 
 	fnameID := path.Join("data", fmt.Sprintf("%x%s", md5.Sum([]byte(u)), filepath.Ext(fname)))
@@ -464,17 +471,17 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 
 	if removeSilence {
 		log.Debug("removing silence")
-		err = os.Rename(shortName, shortName+".mp3")
+		err = os.Rename(shortName, shortName+".wav")
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		err = ffmpeg.RemoveSilence(shortName+".mp3", shortName)
+		err = ffmpeg.RemoveSilence(shortName+".wav", shortName)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		err = os.Remove(shortName + ".mp3")
+		err = os.Remove(shortName + ".wav")
 		if err != nil {
 			log.Error(err)
 			return
@@ -495,7 +502,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 	// generate patches
 	var segments [][]models.AudioSegment
 	if patchType == "drum" {
-		segments, err = audiosegment.SplitEqual(shortName, 12, 1)
+		segments, err = audiosegment.SplitEqual(shortName, 12, 1, splices)
 		if err != nil {
 			return
 		}
@@ -533,6 +540,7 @@ func generateUserData(u string, startStop []float64, patchType string, removeSil
 		IsSynthPatch:  patchType == "synth",
 		RemoveSilence: removeSilence,
 		RootNote:      rootNote,
+		Splices:       splices,
 	})
 	err = ioutil.WriteFile(path.Join(pathToData, "metadata.json"), b, 0644)
 
@@ -559,7 +567,7 @@ func makeSynthPatch(fname string, rootFrequency float64) (segments [][]models.Au
 		},
 	}
 
-	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".mp3")
+	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".wav")
 	cmd := fmt.Sprintf("-y -i %s %s", fnameout, fnamewav)
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
