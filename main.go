@@ -67,6 +67,9 @@ create a synth patch from a sample with known frequency:
 				for i, _ := range fnames {
 					fnames[i] = c.Args().Get(i)
 				}
+				if len(fnames) == 0 {
+					return fmt.Errorf("need to specify filename")
+				}
 				return convert.ToDrum(fnames, c.Int("slices"))
 			},
 		},
@@ -81,7 +84,14 @@ create a synth patch from a sample with known frequency:
 				if c.Bool("debug") {
 					log.SetLevel("debug")
 				}
-				return convert.ToSynth(c.Args().Get(1), c.Float64("freq"))
+				fnames := make([]string, c.Args().Len())
+				for i, _ := range fnames {
+					fnames[i] = c.Args().Get(i)
+				}
+				if len(fnames) == 0 {
+					return fmt.Errorf("need to specify filename")
+				}
+				return convert.ToSynth(fnames[0], c.Float64("freq"))
 			},
 		},
 		{

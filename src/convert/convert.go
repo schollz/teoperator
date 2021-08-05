@@ -31,6 +31,7 @@ func newName(fname string) (fname2 string) {
 }
 
 func ToSynth(fname string, baseFreq float64) (err error) {
+	log.Debug(fname)
 	finalName := newName(fname)
 	synthPatch := op1.NewSynthSamplePatch(baseFreq)
 	err = synthPatch.SaveSample(fname, finalName, false)
