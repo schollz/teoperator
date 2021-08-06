@@ -90,8 +90,10 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splice
 				}
 
 				if splices == 0 {
+					logger.Debug("-- splitting on silence --")
 					r.segments, r.err = aubio.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
 					if r.err != nil {
+						logger.Debug("-- splitting on silence w/ ffmpeg --")
 						r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
 						if r.err != nil {
 							logger.Error(r.err)
