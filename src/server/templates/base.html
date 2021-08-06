@@ -449,7 +449,7 @@ display:none;
                 <div>
                     <input type="decimal" id="secondsStart" name="secondsStart" value="((if .Metadata))((.Metadata.Start))((end))" style="min-width: 30%;">
                     <input type="decimal" id="secondsEnd" name="secondsEnd" value="((if .Metadata))((.Metadata.Stop))((end))" style="min-width: 30%;">
-                    <label for="secondsStart">start/end<br>(in seconds):</label>
+                    <label for="secondsStart">start/end:<br><small>(in seconds)</small></label>
                 </div>
                 <div>
                     <select name="synthPatch" id="synthPatch" style="text-align: center;">
@@ -467,7 +467,7 @@ display:none;
                 </div>
                 <div id="optionNumberSplices" ((if $.Metadata.IsSynthPatch))style="display:none;" ((end))>
                     <input type="decimal" id="splices" name="splices" value="((if .Metadata))((.Metadata.Splices))((end))" style="min-width: 60%;">
-                    <label for="optionNumberSplices">splices</label>
+                    <label for="optionNumberSplices"># splices:<br><small>(optional)</small></label>
                 </div>
                 <div id="optionRootNote" ((if $.Metadata.IsSynthPatch))((else))style="display:none;" ((end))>
                     <select name="rootNote" id="rootNote" style="text-align: center;">
