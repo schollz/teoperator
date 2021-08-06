@@ -114,7 +114,7 @@ func Normalize(fname string, fnameout string) (err error) {
 	if err != nil {
 		return
 	}
-	logger.Debugf("ffmpeg output: %s", out)
+	logger.Tracef("ffmpeg output: %s", out)
 	index := bytes.LastIndex(out, []byte("{"))
 	var n Normalization
 	err = json.Unmarshal(out[index:], &n)
@@ -142,7 +142,7 @@ func Normalize(fname string, fnameout string) (err error) {
 	if err != nil {
 		return
 	}
-	logger.Debugf("ffmpeg output: %s", out)
+	logger.Tracef("ffmpeg output: %s", out)
 
 	return
 
@@ -156,7 +156,7 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, 
 	if err != nil {
 		return
 	}
-	logger.Debugf("ffmpeg output: %s", out)
+	logger.Tracef("ffmpeg output: %s", out)
 	// if !strings.Contains(string(out), "silence_end") {
 	// 	err = fmt.Errorf("could not find silence")
 	// 	logger.Error(err)
@@ -237,7 +237,7 @@ func RemoveSilence(fnameIn, fnameOut string) (err error) {
 	if err != nil {
 		return
 	}
-	logger.Debugf("ffmpeg output: %s", out)
+	logger.Tracef("ffmpeg output: %s", out)
 
 	return
 }
