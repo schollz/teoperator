@@ -28,12 +28,17 @@ func IsInstalled() bool {
 	return true
 }
 
-func NumSamples(fname string) (numSamples int64, err error) {
+func NumSamples(fname string) (numSamples int64, sampleRate int64, err error) {
 	file, err := os.Open(fname)
 	if err != nil {
 		return
 	}
 	reader := wav.NewReader(file)
+	format, err := reader.Format()
+	if err != nil {
+		return
+	}
+	sampleRate = int64(format.SampleRate)
 
 	defer file.Close()
 

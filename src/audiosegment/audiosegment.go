@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/schollz/logger"
+	"github.com/schollz/teoperator/src/aubio"
 	"github.com/schollz/teoperator/src/ffmpeg"
 	"github.com/schollz/teoperator/src/models"
 	"github.com/schollz/teoperator/src/op1"
@@ -89,11 +90,14 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splice
 				}
 
 				if splices == 0 {
-					r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
+					r.segments, r.err = aubio.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
 					if r.err != nil {
-						logger.Error(r.err)
-						results <- r
-						continue
+						r.segments, r.err = ffmpeg.SplitOnSilence(fnameTrunc, -22, 0.2, -0.2)
+						if r.err != nil {
+							logger.Error(r.err)
+							results <- r
+							continue
+						}
 					}
 				} else {
 					r.segments = make([]models.AudioSegment, splices)

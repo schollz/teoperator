@@ -71,7 +71,7 @@ func ToDrumSplice(fname string, slices int) (err error) {
 		}
 	} else {
 		var totalSamples int64
-		totalSamples, err = ffmpeg.NumSamples(fname2)
+		totalSamples, _, err = ffmpeg.NumSamples(fname2)
 		if err != nil {
 			return
 		}
@@ -112,7 +112,7 @@ func ToDrum(fnames []string, slices int) (err error) {
 			return
 		}
 		_, fnames2[i] = filepath.Split(fname2)
-		sampleEnd[i], err = ffmpeg.NumSamples(fname2)
+		sampleEnd[i], _, err = ffmpeg.NumSamples(fname2)
 		if err != nil {
 			return
 		}
