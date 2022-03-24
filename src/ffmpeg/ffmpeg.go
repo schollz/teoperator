@@ -67,8 +67,9 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 		fname2,
 	)
 	logger.Debug(cmd)
-	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	} else {
 		os.Remove(f.Name())
@@ -85,8 +86,9 @@ func ToMono(fname string) (fname2 string, err error) {
 		fname2,
 	)
 	logger.Debug(cmd)
-	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	}
 	return
@@ -112,6 +114,7 @@ func Normalize(fname string, fnameout string) (err error) {
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	}
 	logger.Tracef("ffmpeg output: %s", out)
