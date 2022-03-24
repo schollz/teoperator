@@ -77,7 +77,8 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 
 func ToMono(fname string) (fname2 string, err error) {
 	_, fname2 = filepath.Split(fname)
-	fname2 = fname2 + ".mono.wav"
+	// Create safe filenames to make ffmpeg concat happy
+	fname2 = strings.ReplaceAll(fname2, " ", "-") + ".mono.wav"
 	cmd := []string{"-y", "-i", fname, "-ss", "0", "-to", "12", "-ar", "44100", "-ac", "1", fname2}
 	logger.Debug(cmd)
 	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
