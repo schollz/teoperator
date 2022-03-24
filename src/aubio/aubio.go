@@ -13,9 +13,9 @@ import (
 
 // SplitOnSilence splits any audio file based on its silence
 func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, correction float64) (segments []models.AudioSegment, err error) {
-	cmd := fmt.Sprintf("-s -30 %s", fname)
+	cmd := []string{"-s", "-30", fname}
 	logger.Debug(cmd)
-	out, err := exec.Command("aubioonset", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("aubioonset", cmd...).CombinedOutput()
 	if err != nil {
 		return
 	}

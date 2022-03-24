@@ -568,9 +568,9 @@ func makeSynthPatch(fname string, rootFrequency float64) (segments [][]models.Au
 	}
 
 	fnamewav := path.Join(basefolder, strings.Split(basefname, ".")[0]+".wav")
-	cmd := fmt.Sprintf("-y -i %s %s", fnameout, fnamewav)
+	cmd := []string{"-y", "-i", fnameout, fnamewav}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
 	if err != nil {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())
@@ -578,11 +578,10 @@ func makeSynthPatch(fname string, rootFrequency float64) (segments [][]models.Au
 	}
 
 	waveformfname := fnamewav + ".png"
-	cmd = fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color ffffff --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
-		fnamewav, waveformfname, 5.75*100,
-	)
+	cmd = []string{"-i", fnamewav, "-o", waveformfname, "--background-color", "ffffff00", "--waveform-color", "ffffff", "--amplitude-scale", "2", "--no-axis-labels", "--pixels-per-second", "100", "--height", "160", "--width",
+		fmt.Sprintf("%2.0f", 5.75*100)}
 	logger.Debug(cmd)
-	out, err = exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command("audiowaveform", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("audiowaveform: %s", out)
 	}
