@@ -87,11 +87,9 @@ func download(u string, fname string, byteLimit int64) (alternativeName string, 
 }
 
 func Youtube(u string, fname string) (alternativeName string, err error) {
-	cmd := fmt.Sprintf("--extract-audio --audio-format mp3 %s",
-		u,
-	)
+	cmd := []string{"--extract-audio", "--audio-format", "mp3", u}
 	logger.Debug(cmd)
-	out, err := exec.Command("youtube-dl", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("youtube-dl", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("youtube-dl: %s", out)
 		return

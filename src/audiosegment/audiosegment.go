@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 
 	"github.com/schollz/logger"
 	"github.com/schollz/teoperator/src/aubio"
@@ -42,9 +41,9 @@ func SplitEqual(fname string, secondsMax float64, secondsOverlap float64, splice
 		secondsOverlap = 0
 	}
 
-	cmd := fmt.Sprintf("%s", fname)
+	cmd := []string{fname}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffprobe", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffprobe", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Debugf("%s", out)
 		return
@@ -183,11 +182,10 @@ func DrawSegments(segments []models.AudioSegment) (err error) {
 	}
 	wave := utils.TempFileName("wave", ".png")
 	defer os.Remove(wave)
-	cmd := fmt.Sprintf("-i %s -o %s --background-color ffffff00 --waveform-color 000000 --amplitude-scale 2 --no-axis-labels --pixels-per-second 100 --height 160 --width %2.0f",
-		segments[0].Filename, wave, (segments[len(segments)-1].End-segments[0].Start)*100,
-	)
+	cmd := []string{"-i", segments[0].Filename, "-o", wave, "--background-color", "ffffff00", "--waveform-color", "000000", "--amplitude-scale", "2", "--no-axis-labels", "--pixels-per-second", "100", "--height", "160", "--width",
+		fmt.Sprintf("%2.0f", (segments[len(segments)-1].End-segments[0].Start)*100)}
 	logger.Debug(cmd)
-	out, err := exec.Command("audiowaveform", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("audiowaveform", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("audiowaveform: %s", out)
 	}
@@ -199,11 +197,12 @@ func DrawSegments(segments []models.AudioSegment) (err error) {
 		defer os.Remove(canvasName)
 
 		canvases = append(canvases, canvasName)
-		cmd = fmt.Sprintf("-size %2.0fx160 canvas:%s %s",
-			segments[i].Duration*100, colors[int(math.Mod(float64(i), 2))], canvasName,
-		)
+		cmd = []string{"-size",
+			fmt.Sprintf("%2.0fx160", segments[i].Duration*100),
+			fmt.Sprintf("canvas:%s", colors[int(math.Mod(float64(i), 2))]),
+			canvasName}
 		logger.Debug(cmd)
-		out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
+		out, err = exec.Command(imagemagickconvert, cmd...).CombinedOutput()
 		if err != nil {
 			logger.Errorf("audiowaveform: %s", out)
 		}
@@ -212,11 +211,9 @@ func DrawSegments(segments []models.AudioSegment) (err error) {
 	// merge canvases
 	finalCanvas := utils.TempFileName("final", ".png")
 	defer os.Remove(finalCanvas)
-	cmd = fmt.Sprintf("%s +append %s",
-		strings.Join(canvases, " "), finalCanvas,
-	)
+	cmd = append(canvases, "+append", finalCanvas)
 	logger.Debug(cmd)
-	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
@@ -225,32 +222,28 @@ func DrawSegments(segments []models.AudioSegment) (err error) {
 	width, height := getImageDimension(wave)
 	finalCanvasResized := utils.TempFileName("finalresize", ".png")
 	defer os.Remove(finalCanvasResized)
-	cmd = fmt.Sprintf("%s -crop %dx%d+0+0 %s",
-		finalCanvas, width, height, finalCanvasResized,
-	)
+	cmd = []string{
+		finalCanvas, "-crop", fmt.Sprintf("%dx%d+0+0", width, height), finalCanvasResized,
+	}
 	logger.Debug(cmd)
-	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
 
 	composite := utils.TempFileName("composite", ".png")
 	defer os.Remove(composite)
-	cmd = fmt.Sprintf("%s %s -compose Dst_In %s",
-		wave, finalCanvasResized, composite,
-	)
+	cmd = []string{wave, finalCanvasResized, "-compose", "Dst_In", composite}
 	logger.Debug(cmd)
-	out, err = exec.Command("composite", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command("composite", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("composite: %s", out)
 	}
 
 	final := segments[0].Filename + ".png"
-	cmd = fmt.Sprintf("%s -fuzz 1%% -transparent black %s",
-		composite, final,
-	)
+	cmd = []string{composite, "-fuzz", "1%", "-transparent", "black", final}
 	logger.Debug(cmd)
-	out, err = exec.Command(imagemagickconvert, strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command(imagemagickconvert, cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("convert: %s", out)
 	}
@@ -403,9 +396,9 @@ func getImageDimension(imagePath string) (int, int) {
 
 // Truncate will truncate a file, while converting it to 44100
 func Truncate(fnameIn, fnameOut, from, to string) (err error) {
-	cmd := fmt.Sprintf("-y -i %s -c copy -ss %s -to %s %s", fnameIn, from, to, fnameOut)
+	cmd := []string{"-y", "-i", fnameIn, "-c", "copy", "-ss", from, "-to", to, fnameOut}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
 	if err != nil {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())
@@ -416,9 +409,9 @@ func Truncate(fnameIn, fnameOut, from, to string) (err error) {
 
 // Convert will convert a file to
 func Convert(fnameIn, fnameOut string) (err error) {
-	cmd := fmt.Sprintf("-y -i %s -ar 44100 %s", fnameIn, fnameOut)
+	cmd := []string{"-y", "-i", fnameIn, "-ar", "44100", fnameOut}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	logger.Debugf("ffmpeg: %s", out)
 	if err != nil {
 		err = fmt.Errorf("ffmpeg; %s", err.Error())

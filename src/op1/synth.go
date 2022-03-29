@@ -384,9 +384,11 @@ func (s SynthPatch) SaveSample(fname string, fnameout string, trimSilence bool) 
 	// generate a truncated, merged audio waveform, downsampled to 1 channel
 	fnameDownsampled := fname + ".down.aif"
 	defer os.Remove(fnameDownsampled)
-	cmd := fmt.Sprintf("-y -i %s -ss %2.4f -to %2.4f -ar 44100  -ac 1 %s", fname, startClip, startClip+5.75, fnameDownsampled)
+	cmd := []string{"-y", "-i", fname, "-ss",
+		fmt.Sprintf("%2.4f", startClip), "-to", fmt.Sprintf("%2.4f", startClip+5.75),
+		"-ar", "44100", "-ac", "1", fnameDownsampled}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("ffmpeg: %s", out)
 		return

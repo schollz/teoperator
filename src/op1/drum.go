@@ -56,9 +56,9 @@ func (drumpatch *DrumPatch) Save(audioClip string, fnameOut string) (err error) 
 		return
 	}
 	// generate a merged audio waveform, downsampled to 1 channel
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 12 -ar 44100  -ac 1 %s", audioClip, fnameOut)
+	cmd := []string{"-y", "-i", audioClip, "-ss", "0", "-to", "12", "-ar", "44100", "-ac", "1", fnameOut}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		logger.Errorf("ffmpeg: %s", out)
 		return

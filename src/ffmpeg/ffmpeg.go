@@ -19,9 +19,9 @@ import (
 
 // IsInstalled checks whether ffmpeg is installed
 func IsInstalled() bool {
-	cmd := fmt.Sprintf("--help")
+	cmd := []string{"--help"}
 	logger.Debug(cmd)
-	_, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	_, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		return false
 	}
@@ -62,13 +62,11 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 	f.Close()
 	_, fname2 = filepath.Split(fnames[0])
 	fname2 = fname2 + "concat.wav"
-	cmd := fmt.Sprintf("-y -f concat -i %s %s",
-		f.Name(),
-		fname2,
-	)
+	cmd := []string{"-y", "-f", "concat", "-i", f.Name(), fname2}
 	logger.Debug(cmd)
-	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	} else {
 		os.Remove(f.Name())
@@ -79,14 +77,13 @@ func Concatenate(fnames []string) (fname2 string, err error) {
 
 func ToMono(fname string) (fname2 string, err error) {
 	_, fname2 = filepath.Split(fname)
-	fname2 = fname2 + ".mono.wav"
-	cmd := fmt.Sprintf("-y -i %s -ss 0 -to 12 -ar 44100 -ac 1 %s",
-		fname,
-		fname2,
-	)
+	// Create safe filenames to make ffmpeg concat happy
+	fname2 = strings.ReplaceAll(fname2, " ", "-") + ".mono.wav"
+	cmd := []string{"-y", "-i", fname, "-ss", "0", "-to", "12", "-ar", "44100", "-ac", "1", fname2}
 	logger.Debug(cmd)
-	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	}
 	return
@@ -108,10 +105,11 @@ type Normalization struct {
 // Normalize will perform double pass ebu R128 normalization
 // http://peterforgacs.github.io/2018/05/20/Audio-normalization-with-ffmpeg/
 func Normalize(fname string, fnameout string) (err error) {
-	cmd := fmt.Sprintf("-i %s -af loudnorm=I=-23:LRA=7:tp=-2:print_format=json -f null -", fname)
+	cmd := []string{"-i", fname, "-af", "loudnorm=I=-23:LRA=7:tp=-2:print_format=json", "-f", "null", "-"}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
+		logger.Errorf("ffmpeg: %s", out)
 		return
 	}
 	logger.Tracef("ffmpeg output: %s", out)
@@ -129,16 +127,15 @@ func Normalize(fname string, fnameout string) (err error) {
 		return
 	}
 
-	cmd = fmt.Sprintf("-i %s -ar 44100 -af loudnorm=I=-23:LRA=7:tp=-2:measured_I=%s:measured_LRA=%s:measured_tp=%s:measured_thresh=%s:offset=-0.47 -y %s",
-		fname,
-		n.InputI,
-		n.InputLra,
-		n.InputTp,
-		n.InputThresh,
-		fnameout,
-	)
+	cmd = []string{"-i", fname, "-ar", "44100", "-af",
+		fmt.Sprintf("loudnorm=I=-23:LRA=7:tp=-2:measured_I=%s:measured_LRA=%s:measured_tp=%s:measured_thresh=%s:offset=-0.47",
+			n.InputI,
+			n.InputLra,
+			n.InputTp,
+			n.InputThresh),
+		"-y", fnameout}
 	logger.Debug(cmd)
-	out, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err = exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		return
 	}
@@ -150,9 +147,11 @@ func Normalize(fname string, fnameout string) (err error) {
 
 // SplitOnSilence splits any audio file based on its silence
 func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, correction float64) (segments []models.AudioSegment, err error) {
-	cmd := fmt.Sprintf("-i %s -af silencedetect=noise=%ddB:d=%2.3f -f null -", fname, silenceDB, silenceMinimumSeconds)
+	cmd := []string{"-i", fname, "-af",
+		fmt.Sprintf("silencedetect=noise=%ddB:d=%2.3f", silenceDB, silenceMinimumSeconds),
+		"-f", "null", "-"}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		return
 	}
@@ -231,9 +230,9 @@ func SplitOnSilence(fname string, silenceDB int, silenceMinimumSeconds float64, 
 }
 
 func RemoveSilence(fnameIn, fnameOut string) (err error) {
-	cmd := fmt.Sprintf("-i %s -af silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB -y %s", fnameIn, fnameOut)
+	cmd := []string{"-i", fnameIn, "-af", "silenceremove=stop_periods=-1:stop_duration=0.1:stop_threshold=-50dB", "-y", fnameOut}
 	logger.Debug(cmd)
-	out, err := exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	out, err := exec.Command("ffmpeg", cmd...).CombinedOutput()
 	if err != nil {
 		return
 	}
