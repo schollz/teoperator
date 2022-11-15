@@ -161,7 +161,8 @@ func ToDrum2(fnames []string, slices int) (finalName string, err error) {
 		return
 	}
 	if len(fnames) == 1 {
-		return ToDrumSplice(fnames[0], slices)
+		err = ToDrumSplice(fnames[0], slices)
+		return
 	}
 	_, finalName = filepath.Split(fnames[0])
 	finalName = newName(finalName)
